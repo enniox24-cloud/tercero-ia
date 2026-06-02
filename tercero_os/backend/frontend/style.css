@@ -1,0 +1,14 @@
+body{
+background:#111;
+color:white;
+font-family:Arial;
+padding:20px;
+}
+
+#chat{
+height:400px;
+overflow:auto;
+border:1px solid #333;
+padding:10px;
+margin-bottom:10px;
+}
