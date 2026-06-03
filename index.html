@@ -199,7 +199,6 @@
 <body>
 
     <div id="mainframe-container">
-        <!-- Izquierda: Eje del Sistema de Telemetría -->
         <div id="telemetry-panel">
             <div class="panel-title">NÚCLEO COGNITIVO</div>
             
@@ -209,15 +208,16 @@
             
             <div style="width: 100%;">
                 <button class="hud-btn" style="width: 100%; margin-bottom: 15px;" onclick="sincronizarCanalAudio()">AUTORIZAR AUDIO</button>
-                <div style="font-size: 0.75rem; color: rgba(0, 242, 254, 0.6); text-align: center; line-height: 1.5;">
-                    STATUS: SECURE MATRIX<br>
-                    PORT: 5000 | CORE: RUNNING<br>
-                    HOST: RENDER CLOUD V3
+                
+                <div id="hud-telemetry-display" style="font-size: 0.75rem; color: rgba(0, 242, 254, 0.8); text-align: center; line-height: 1.6; font-family: monospace;">
+                    CHRONO: <span id="telemetry-clock">00:00:00</span><br>
+                    BATTERY: <span id="telemetry-battery">SCANNING...</span><br>
+                    NET LATENCY: <span id="telemetry-ping">0 ms</span><br>
+                    MATRIX HOST: RENDER CLOUD V3
                 </div>
             </div>
         </div>
 
-        <!-- Derecha: Consola Operativa Central -->
         <div id="console-panel">
             <div class="panel-title" style="text-align: left; margin-bottom: 15px;">TERCERO OS ONLINE v3.0 // MAINFRAME HUD</div>
             
@@ -245,6 +245,54 @@
         
         let reconocimientoVoz;
         let controlVozActivo = false;
+
+        // --- SISTEMA DE TELEMETRÍA EN TIEMPO REAL (PASO 1 HUD) ---
+        function actualizarRelojHUD() {
+            const ahora = new Date();
+            const hrs = String(ahora.getHours()).padStart(2, '0');
+            const mins = String(ahora.getMinutes()).padStart(2, '0');
+            const secs = String(ahora.getSeconds()).padStart(2, '0');
+            document.getElementById('telemetry-clock').innerText = `${hrs}:${mins}:${secs}`;
+        }
+        setInterval(actualizarRelojHUD, 1000);
+
+        async function inicializarTelemetriaBateria() {
+            if ('getBattery' in navigator) {
+                try {
+                    const battery = await navigator.getBattery();
+                    const cambiarMétricas = () => {
+                        const nivel = Math.round(battery.level * 100);
+                        const estadoCarga = battery.charging ? " [CHARGING]" : "";
+                        const contenedor = document.getElementById('telemetry-battery');
+                        contenedor.innerText = `${nivel}%${estadoCarga}`;
+                        contenedor.style.color = nivel <= 20 && !battery.charging ? "#ff0055" : "var(--neon-cyan)";
+                    };
+                    cambiarMétricas();
+                    battery.addEventListener('levelchange', cambiarMétricas);
+                    battery.addEventListener('chargingchange', cambiarMétricas);
+                } catch (e) {
+                    document.getElementById('telemetry-battery').innerText = "OFFLINE";
+                }
+            } else {
+                document.getElementById('telemetry-battery').innerText = "NOT SUPPORTED";
+            }
+        }
+        inicializarTelemetriaBateria();
+
+        async function calcularLatenciaRed() {
+            const inicio = Date.now();
+            try {
+                // Hacemos una llamada ligera a los encabezados del servidor para medir la velocidad de respuesta real
+                await fetch('/chat', { method: 'OPTIONS' }).catch(() => {});
+                const latencia = Date.now() - inicio;
+                document.getElementById('telemetry-ping').innerText = `${latencia} ms`;
+            } catch (err) {
+                document.getElementById('telemetry-ping').innerText = "ERR ms";
+            }
+        }
+        setInterval(calcularLatenciaRed, 5000);
+        calcularLatenciaRed();
+        // ---------------------------------------------------------
 
         // Configuración nativa del reconocedor del navegador
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -279,7 +327,6 @@
         }
 
         function sincronizarCanalAudio() {
-            // Fuerza la inicialización del contexto de audio del navegador para saltar restricciones
             window.AudioContext = window.AudioContext || window.webkitAudioContext;
             const ctx = new AudioContext();
             logSistema("Canal de salida de audio sincronizado correctamente.");
@@ -322,8 +369,9 @@
                 terminal.innerHTML += `<div class="log-entry tercero-resp">[TERCERO]: ${datos.text}</div>`;
                 irAlFondo();
 
-                if (datos.audio_url) {
-                    emitirAudioNucleo(datos.audio_url);
+                if (datos.audio_file) {
+                    // Mapeamos a la ruta estática correcta que configuramos previamente
+                    emitirAudioNucleo(`/uploads/responses/${datos.audio_file}`);
                 }
             } catch (err) {
                 logSistema("Error crítico en envío de paquete de datos.");
@@ -352,8 +400,8 @@
                 terminal.innerHTML += `<div class="log-entry tercero-resp">[TERCERO]: ${datos.text}</div>`;
                 irAlFondo();
 
-                if (datos.audio_url) {
-                    emitirAudioNucleo(datos.audio_url);
+                if (datos.audio_file) {
+                    emitirAudioNucleo(`/uploads/responses/${datos.audio_file}`);
                 }
             } catch (err) {
                 logSistema("Fallo en la carga de archivo binario/PDF.");
@@ -361,7 +409,6 @@
         }
 
         function emitirAudioNucleo(url) {
-            // Añadimos timestamp para evitar caché del navegador que rompe flujos repetidos
             const streamingAudio = new Audio(`${url}?t=${new Date().getTime()}`);
             
             streamingAudio.onplay = () => {
