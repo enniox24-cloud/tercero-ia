@@ -4,18 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TERCERO OS | MAINFRAME V3.0</title>
+    <!-- Importamos FontAwesome para iconos de alta tecnología -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --neon-cyan: #00f2fe;
-            --neon-glow: rgba(0, 242, 254, 0.25);
-            --dark-space: #03060f;
-            --panel-bg: rgba(6, 13, 26, 0.7);
+            --neon-glow: rgba(0, 242, 254, 0.35);
+            --dark-space: #020612;
+            --panel-bg: rgba(4, 14, 32, 0.65);
+            --neon-orange: #ffaa00;
+            --neon-red: #ff0055;
+            --neon-green: #39ff14;
         }
 
         * { box-sizing: border-box; }
 
         body {
             background-color: var(--dark-space);
+            /* Fondo con rejilla holográfica estilo plano de Stark Industries */
+            background-image: 
+                linear-gradient(rgba(0, 242, 254, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 242, 254, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
             color: var(--neon-cyan);
             font-family: 'Courier New', Courier, monospace;
             margin: 0;
@@ -30,224 +40,280 @@
             width: 100%;
             height: 100%;
             border: 2px solid var(--neon-cyan);
-            box-shadow: 0 0 20px var(--neon-glow), inset 0 0 20px var(--neon-glow);
-            margin: 10px;
-            background: linear-gradient(180deg, var(--dark-space) 0%, #051026 100%);
+            box-shadow: 0 0 30px var(--neon-glow), inset 0 0 20px var(--neon-glow);
+            margin: 12px;
+            background: radial-gradient(circle at center, rgba(6, 26, 60, 0.4) 0%, var(--dark-space) 100%);
+            position: relative;
+            clip-path: polygon(0 0, 98% 0, 100% 2%, 100% 100%, 2% 100%, 0 98%); /* Esquinas cortadas estilo militar */
+        }
+
+        /* Línea láser de escaneo vertical que recorre la pantalla */
+        #mainframe-container::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(to bottom, transparent, var(--neon-cyan), transparent);
+            opacity: 0.15;
+            top: 0;
+            animation: radarScan 8s linear infinite;
+            pointer-events: none;
         }
 
         /* Panel Izquierdo: Telemetría y Núcleo */
         #telemetry-panel {
-            width: 350px;
+            width: 360px;
             border-right: 2px solid var(--neon-cyan);
             background: var(--panel-bg);
+            backdrop-filter: blur(8px);
             display: flex;
             flex-direction: column;
             align-items: center;
             padding: 25px;
             justify-content: space-between;
-            transition: all 0.3s ease;
         }
 
         .panel-title {
             font-size: 1.1rem;
             font-weight: bold;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
             text-align: center;
-            border-bottom: 1px solid var(--neon-cyan);
+            border-bottom: 2px double var(--neon-cyan);
             width: 100%;
             padding-bottom: 10px;
-            text-shadow: 0 0 8px var(--neon-cyan);
+            text-shadow: 0 0 10px var(--neon-cyan);
         }
 
-        /* Núcleo Central de Animación - Estilo Jarvis */
+        /* Arc Reactor de Jarvis */
         #arc-reactor {
-            width: 180px;
-            height: 180px;
-            border: 6px double var(--neon-cyan);
+            width: 190px;
+            height: 190px;
+            border: 4px solid var(--neon-cyan);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
-            box-shadow: 0 0 15px var(--neon-cyan);
-            transition: all 0.3s ease;
+            box-shadow: 0 0 20px var(--neon-cyan), inset 0 0 15px var(--neon-cyan);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         #arc-reactor::before {
             content: '';
             position: absolute;
-            width: 130px;
-            height: 130px;
+            width: 150px;
+            height: 150px;
             border: 2px dashed var(--neon-cyan);
             border-radius: 50%;
-            animation: rotateCore 12s linear infinite;
+            animation: rotateCoreClockwise 15s linear infinite;
+        }
+
+        #arc-reactor::after {
+            content: '';
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border: 1px dotted #ffffff;
+            border-radius: 50%;
+            animation: rotateCoreCounter 8s linear infinite;
         }
 
         #inner-core {
-            width: 70px;
-            height: 70px;
+            width: 75px;
+            height: 75px;
             background-color: var(--neon-cyan);
             border-radius: 50%;
-            box-shadow: 0 0 25px var(--neon-cyan);
-            transition: transform 0.2s ease;
+            box-shadow: 0 0 30px var(--neon-cyan);
+            transition: all 0.3s ease;
         }
 
-        /* Animación Activa de Voz */
+        /* Animaciones del Núcleo Jarvis */
         .core-speaking {
-            animation: corePulse 1.2s ease-in-out infinite alternate !important;
+            animation: corePulseAudio 0.8s ease-in-out infinite alternate !important;
         }
 
         .core-listening {
-            border-color: #ff0055 !important;
-            box-shadow: 0 0 25px #ff0055 !important;
+            border-color: var(--neon-red) !important;
+            box-shadow: 0 0 35px var(--neon-red), inset 0 0 20px var(--neon-red) !important;
+        }
+        .core-listening::before, .core-listening::after {
+            border-color: var(--neon-red) !important;
         }
         .core-listening #inner-core {
-            background-color: #ff0055 !important;
-            box-shadow: 0 0 30px #ff0055 !important;
+            background-color: var(--neon-red) !important;
+            box-shadow: 0 0 40px var(--neon-red) !important;
+            transform: scale(1.1);
         }
 
-        /* NUEVO: ESTILOS PARA BARRAS DE TELEMETRÍA DE NEÓN */
+        /* Barras de Telemetría */
         .telemetry-bar-container {
             width: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(0, 242, 254, 0.3);
-            height: 12px;
-            margin: 5px 0 12px 0;
-            border-radius: 3px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(0, 242, 254, 0.4);
+            height: 10px;
+            margin: 6px 0 14px 0;
+            border-radius: 2px;
             overflow: hidden;
-            position: relative;
         }
 
         .telemetry-bar-fill {
             height: 100%;
             width: 0%;
             background: var(--neon-cyan);
-            box-shadow: 0 0 8px var(--neon-cyan);
-            transition: width 0.5s ease, background-color 0.5s ease;
+            box-shadow: 0 0 10px var(--neon-cyan);
+            transition: width 0.4s ease, background-color 0.4s ease;
         }
 
-        /* Panel Derecho: Consola y Terminal */
+        /* Panel Derecho: Consola Central */
         #console-panel {
             flex: 1;
             display: flex;
             flex-direction: column;
-            padding: 20px;
-            background: rgba(2, 4, 10, 0.85);
-            overflow: hidden;
+            padding: 24px;
+            background: rgba(1, 4, 12, 0.8);
+            backdrop-filter: blur(4px);
         }
 
         #terminal-display {
             flex: 1;
-            border: 1px solid rgba(0, 242, 254, 0.3);
-            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(0, 242, 254, 0.25);
+            background: rgba(0, 2, 7, 0.85);
             padding: 20px;
             overflow-y: auto;
             margin-bottom: 20px;
-            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9);
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 1);
         }
 
-        .log-entry { margin: 10px 0; line-height: 1.4; font-size: 1rem; }
-        .user-cmd { color: #ffffff; font-weight: bold; }
-        .tercero-resp { color: var(--neon-cyan); text-shadow: 0 0 3px var(--neon-glow); }
-        .system-alert { color: #ffaa00; font-size: 0.85rem; }
+        .log-entry { margin: 12px 0; line-height: 1.5; font-size: 0.95rem; }
+        .user-cmd { color: #ffffff; font-weight: bold; letter-spacing: 0.5px; }
+        .tercero-resp { color: var(--neon-cyan); text-shadow: 0 0 4px rgba(0, 242, 254, 0.4); }
+        .system-alert { color: var(--neon-orange); font-size: 0.85rem; }
 
-        /* Controles de Entrada */
-        #interaction-deck {
+        /* NUEVA TERMINAL DE CÓDIGO INCORPORADA AL HUD */
+        .hud-terminal-box {
+            background: rgba(4, 10, 22, 0.9);
+            border: 1px solid var(--neon-cyan);
+            border-radius: 4px;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2), inset 0 0 10px rgba(0, 242, 254, 0.15);
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .hud-terminal-header {
+            background: rgba(0, 242, 254, 0.12);
+            border-bottom: 1px solid rgba(0, 242, 254, 0.3);
+            padding: 8px 14px;
+            font-size: 0.75rem;
+            letter-spacing: 1.5px;
+            color: var(--neon-cyan);
             display: flex;
-            gap: 12px;
+            justify-content: space-between;
             align-items: center;
         }
 
+        .hud-terminal-body {
+            padding: 14px;
+            margin: 0;
+            font-size: 0.9rem;
+            color: var(--neon-green);
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+
+        .blink-dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            background-color: var(--neon-red);
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: dotPulse 0.8s infinite alternate;
+        }
+
+        /* Controles Inferiores */
+        #interaction-deck { display: flex; gap: 14px; align-items: center; }
+
         .hud-btn {
-            background: transparent;
+            background: rgba(0, 242, 254, 0.04);
             border: 1px solid var(--neon-cyan);
             color: var(--neon-cyan);
-            padding: 14px 22px;
+            padding: 14px 24px;
             font-family: inherit;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             cursor: pointer;
             text-transform: uppercase;
             font-weight: bold;
-            transition: all 0.2s ease;
-            box-shadow: 0 0 5px rgba(0, 242, 254, 0.1);
-            white-space: nowrap;
+            letter-spacing: 1px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
         }
 
         .hud-btn:hover {
             background: var(--neon-cyan);
             color: var(--dark-space);
-            box-shadow: 0 0 15px var(--neon-cyan);
+            box-shadow: 0 0 18px var(--neon-cyan);
         }
 
         #mic-btn.active-mic {
-            border-color: #ff0055;
-            color: #ff0055;
+            border-color: var(--neon-red);
+            color: var(--neon-red);
+            background: rgba(255, 0, 85, 0.1);
             animation: alertBlink 1s infinite alternate;
         }
 
         #command-input {
             flex: 1;
-            background: rgba(0, 0, 0, 0.7);
-            border: 1px solid rgba(0, 242, 254, 0.5);
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(0, 242, 254, 0.4);
             color: #ffffff;
             padding: 14px;
             font-family: inherit;
             font-size: 1rem;
             outline: none;
-            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5);
+            letter-spacing: 0.5px;
         }
 
         #command-input:focus {
             border-color: var(--neon-cyan);
-            box-shadow: 0 0 10px var(--neon-glow), inset 0 0 5px rgba(0, 242, 254, 0.2);
+            box-shadow: 0 0 12px var(--neon-glow);
         }
 
-        /* Animaciones CSS Keyframes */
-        @keyframes rotateCore {
+        /* --- ANIMACIONES --- */
+        @keyframes rotateCoreClockwise {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
-
-        @keyframes corePulse {
-            0% { transform: scale(1); box-shadow: 0 0 15px var(--neon-cyan); }
-            100% { transform: scale(1.15); box-shadow: 0 0 35px var(--neon-cyan); border-color: #ffffff; }
+        @keyframes rotateCoreCounter {
+            from { transform: rotate(360deg); }
+            to { transform: rotate(0deg); }
         }
-
+        @keyframes radarScan {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
+        @keyframes corePulseAudio {
+            0% { transform: scale(1); box-shadow: 0 0 15px var(--neon-cyan); }
+            100% { transform: scale(1.12); box-shadow: 0 0 35px var(--neon-cyan); }
+        }
+        @keyframes dotPulse {
+            from { opacity: 0.2; } to { opacity: 1; }
+        }
         @keyframes alertBlink {
             0% { box-shadow: 0 0 5px rgba(255, 0, 85, 0.2); }
-            100% { box-shadow: 0 0 20px rgba(255, 0, 85, 0.6); background: rgba(255, 0, 85, 0.1); }
+            100% { box-shadow: 0 0 20px rgba(255, 0, 85, 0.6); }
         }
 
-        /* Optimizaciones responsivas */
+        /* Ajustes Responsivos */
         @media (max-width: 1024px) {
-            #mainframe-container { flex-direction: column; margin: 5px; }
-            #telemetry-panel {
-                width: 100%; height: auto; border-right: none;
-                border-bottom: 2px solid var(--neon-cyan); padding: 15px;
-                flex-direction: row; gap: 15px;
-            }
-            #arc-reactor { width: 100px; height: 100px; }
-            #arc-reactor::before { width: 70px; height: 70px; }
+            #mainframe-container { flex-direction: column; margin: 6px; }
+            #telemetry-panel { width: 100%; border-right: none; border-bottom: 2px solid var(--neon-cyan); flex-direction: row; padding: 15px; }
+            #arc-reactor { width: 110px; height: 110px; }
+            #arc-reactor::before { width: 80px; height: 80px; }
+            #arc-reactor::after { width: 60px; height: 60px; }
             #inner-core { width: 40px; height: 40px; }
-            #telemetry-panel > div:last-child {
-                flex: 1; display: flex; flex-direction: column; justify-content: center;
-            }
-        }
-
-        @media (max-width: 768px) {
-            body { overflow: auto; height: auto; min-height: 100vh; }
-            #mainframe-container { height: auto; min-height: calc(100vh - 10px); flex-direction: column; }
-            #telemetry-panel { flex-direction: column; padding: 15px; gap: 10px; }
-            #arc-reactor { width: 90px; height: 90px; }
-            #arc-reactor::before { width: 60px; height: 60px; }
-            #inner-core { width: 30px; height: 30px; }
-            #console-panel { padding: 12px; height: 60vh; }
-            .panel-title { font-size: 0.9rem; }
-            .log-entry { font-size: 0.85rem; }
-            #interaction-deck { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-            #command-input { grid-column: span 2; font-size: 0.9rem; padding: 10px; }
-            .hud-btn { padding: 10px 12px; font-size: 0.8rem; text-align: center; justify-content: center; display: flex; align-items: center; }
-            #interaction-deck > button:last-child { grid-column: span 2; }
+            #console-panel { height: 65vh; }
         }
     </style>
 </head>
@@ -255,48 +321,45 @@
 
     <div id="mainframe-container">
         <div id="telemetry-panel">
-            <div class="panel-title">NÚCLEO COGNITIVO</div>
+            <div class="panel-title"><i class="fas fa-brain"></i> NÚCLEO COGNITIVO</div>
             
             <div id="arc-reactor">
                 <div id="inner-core"></div>
             </div>
             
             <div style="width: 100%;">
-                <button class="hud-btn" style="width: 100%; margin-bottom: 15px;" onclick="sincronizarCanalAudio()">AUTORIZAR AUDIO</button>
+                <button class="hud-btn" style="width: 100%; margin-bottom: 15px;" onclick="sincronizarCanalAudio()"><i class="fas fa-volume-up"></i> AUTORIZAR AUDIO</button>
                 
-                <div id="hud-telemetry-display" style="font-size: 0.75rem; color: rgba(0, 242, 254, 0.8); line-height: 1.4; font-family: monospace;">
+                <div id="hud-telemetry-display" style="font-size: 0.75rem; color: rgba(0, 242, 254, 0.8); line-height: 1.4;">
                     CHRONO: <span id="telemetry-clock">00:00:00</span><br>
-                    
                     BATTERY: <span id="telemetry-battery">SCANNING...</span>
                     <div class="telemetry-bar-container">
                         <div id="bar-battery" class="telemetry-bar-fill"></div>
                     </div>
-                    
                     NET LATENCY: <span id="telemetry-ping">0 ms</span>
                     <div class="telemetry-bar-container">
                         <div id="bar-ping" class="telemetry-bar-fill"></div>
                     </div>
-                    
                     MATRIX HOST: RENDER CLOUD V3
                 </div>
             </div>
         </div>
 
         <div id="console-panel">
-            <div class="panel-title" style="text-align: left; margin-bottom: 15px;">TERCERO OS ONLINE v3.0 // MAINFRAME HUD</div>
+            <div class="panel-title" style="text-align: left; margin-bottom: 15px;"><i class="fas fa-terminal"></i> TERCERO OS ONLINE v3.0 // HUD CORE</div>
             
             <div id="terminal-display">
-                <div class="log-entry system-alert">> [SISTEMA]: Enlace inicializado. Presione 'AUTORIZAR AUDIO' antes de emitir transmisiones operativas.</div>
+                <div class="log-entry system-alert">> [SISTEMA]: Enlace Jarvis inicializado. Autorice el audio antes de comenzar.</div>
             </div>
 
             <div id="interaction-deck">
-                <button id="mic-btn" class="hud-btn" onclick="conmutarMicrofono()">🎤 VOCAL</button>
+                <button id="mic-btn" class="hud-btn" onclick="conmutarMicrofono()"><i class="fas fa-microphone"></i> VOCAL</button>
                 
                 <input type="file" id="matrix-file-loader" style="display: none;" onchange="procesarCargaArchivo()">
-                <button class="hud-btn" onclick="document.getElementById('matrix-file-loader').click()">📁 MATRIZ</button>
+                <button class="hud-btn" onclick="document.getElementById('matrix-file-loader').click()"><i class="fas fa-folder-open"></i> MATRIZ</button>
                 
-                <input type="text" id="command-input" placeholder="Escriba un comando para el sistema o hable..." onkeypress="evaluarRetorno(event)">
-                <button class="hud-btn" onclick="enviarMensajeConsola()">EJECUTAR</button>
+                <input type="text" id="command-input" placeholder="Ordene un comando o hable al sistema..." onkeypress="evaluarRetorno(event)">
+                <button class="hud-btn" onclick="enviarMensajeConsola()"><i class="fas fa-bolt"></i> RUN</button>
             </div>
         </div>
     </div>
@@ -310,13 +373,10 @@
         let reconocimientoVoz;
         let controlVozActivo = false;
 
-        // --- TELEMETRÍA EN TIEMPO REAL CON BARRAS DE CARGA ---
+        // --- RELOJ Y TELEMETRÍA ---
         function actualizarRelojHUD() {
             const ahora = new Date();
-            const hrs = String(ahora.getHours()).padStart(2, '0');
-            const mins = String(ahora.getMinutes()).padStart(2, '0');
-            const secs = String(ahora.getSeconds()).padStart(2, '0');
-            document.getElementById('telemetry-clock').innerText = `${hrs}:${mins}:${secs}`;
+            document.getElementById('telemetry-clock').innerText = ahora.toTimeString().split(' ')[0];
         }
         setInterval(actualizarRelojHUD, 1000);
 
@@ -324,30 +384,15 @@
             if ('getBattery' in navigator) {
                 try {
                     const battery = await navigator.getBattery();
-                    const cambiarMétricas = () => {
+                    const cambiarMetricas = () => {
                         const nivel = Math.round(battery.level * 100);
-                        const estadoCarga = battery.charging ? " [CHARGING]" : "";
-                        
-                        document.getElementById('telemetry-battery').innerText = `${nivel}%${estadoCarga}`;
-                        const fillBar = document.getElementById('bar-battery');
-                        fillBar.style.width = `${nivel}%`;
-                        
-                        if (nivel <= 20 && !battery.charging) {
-                            fillBar.style.backgroundColor = "#ff0055";
-                            fillBar.style.boxShadow = "0 0 8px #ff0055";
-                        } else {
-                            fillBar.style.backgroundColor = "var(--neon-cyan)";
-                            fillBar.style.boxShadow = "0 0 8px var(--neon-cyan)";
-                        }
+                        document.getElementById('telemetry-battery').innerText = `${nivel}%${battery.charging ? " [CHARGING]" : ""}`;
+                        document.getElementById('bar-battery').style.width = `${nivel}%`;
                     };
-                    cambiarMétricas();
-                    battery.addEventListener('levelchange', cambiarMétricas);
-                    battery.addEventListener('chargingchange', cambiarMétricas);
-                } catch (e) {
-                    document.getElementById('telemetry-battery').innerText = "OFFLINE";
-                }
-            } else {
-                document.getElementById('telemetry-battery').innerText = "NOT SUPPORTED";
+                    cambiarMetricas();
+                    battery.addEventListener('levelchange', cambiarMetricas);
+                    battery.addEventListener('chargingchange', cambiarMetricas);
+                } catch (e) {}
             }
         }
         inicializarTelemetriaBateria();
@@ -358,48 +403,96 @@
                 await fetch('/chat', { method: 'OPTIONS' }).catch(() => {});
                 const latencia = Date.now() - inicio;
                 document.getElementById('telemetry-ping').innerText = `${latencia} ms`;
-                
-                const fillBar = document.getElementById('bar-ping');
-                // Mapeo visual: 0ms a 500ms escala la barra de 100% a 10%
-                let porcentajeBarra = Math.max(10, Math.min(100, 100 - (latencia / 5)));
-                fillBar.style.width = `${porcentajeBarra}%`;
-                
-                if (latencia > 250) {
-                    fillBar.style.backgroundColor = "#ffaa00";
-                } else if (latencia > 500) {
-                    fillBar.style.backgroundColor = "#ff0055";
-                } else {
-                    fillBar.style.backgroundColor = "var(--neon-cyan)";
-                }
-            } catch (err) {
-                document.getElementById('telemetry-ping').innerText = "ERR ms";
-                document.getElementById('bar-ping').style.width = '0%';
-            }
+                document.getElementById('bar-ping').style.width = `${Math.max(10, Math.min(100, 100 - (latencia / 5)))}%`;
+            } catch (err) {}
         }
         setInterval(calcularLatenciaRed, 5000);
-        calcularLatenciaRed();
 
-        // --- EFECTO DE ESCRITURA DE MAINFRAME CYBER-PUNK ---
-        function escribirEnTerminal(texto, tipoClase) {
+        // --- OPCIÓN A: PARSER INTELIGENTE DE CÓDIGO Y EFECTO DE ESCRITURA STARK ---
+        function escribirEnTerminalMecatronica(textoCompleto, tipoClase) {
             const entradaLog = document.createElement('div');
             entradaLog.className = `log-entry ${tipoClase}`;
             terminal.appendChild(entradaLog);
             
-            let i = 0;
-            const velocidad = 15; // Velocidad de tecleo en milisegundos
+            // Separamos bloques de código encerrados en ``` de Markdown
+            const regexCodigo = /
+```(python|js|json|html|css|md|log)?([\s\S]*?)```/g;
+            let partes = [];
+            let lastIndex = 0;
+            let match;
             
-            function teclear() {
-                if (i < texto.length) {
-                    entradaLog.innerHTML += texto.charAt(i);
-                    i++;
+            while ((match = regexCodigo.exec(textoCompleto)) !== null) {
+                if (match.index > lastIndex) {
+                    partes.push({ tipo: 'texto', contenido: textoCompleto.substring(lastIndex, match.index) });
+                }
+                partes.push({ tipo: 'codigo', lenguaje: match[1] || 'CODE', contenido: match[2].trim() });
+                lastIndex = regexCodigo.lastIndex;
+            }
+            if (lastIndex < textoCompleto.length) {
+                partes.push({ tipo: 'texto', contenido: textoCompleto.substring(lastIndex) });
+            }
+            
+            let parteActual = 0;
+            
+            function procesarSiguienteParte() {
+                if (parteActual >= partes.length) {
                     terminal.scrollTop = terminal.scrollHeight;
-                    setTimeout(teclear, velocidad);
+                    return;
+                }
+                
+                const p = partes[parteActual];
+                if (p.tipo === 'texto') {
+                    let i = 0;
+                    function teclearTexto() {
+                        if (i < p.content ? p.contenido.length : p.contenido.length) {
+                            entradaLog.innerHTML += p.contenido.charAt(i);
+                            i++;
+                            terminal.scrollTop = terminal.scrollHeight;
+                            setTimeout(teclearTexto, 8);
+                        } else {
+                            parteActual++;
+                            procesarSiguienteParte();
+                        }
+                    }
+                    teclearTexto();
+                } else if (p.tipo === 'codigo') {
+                    // Renderizamos la mini-terminal integrada de Stark Industries
+                    const idTerminal = 'term-' + Date.now();
+                    const estructuraTerminal = `
+                        <div class="hud-terminal-box" id="${idTerminal}">
+                            <div class="hud-terminal-header">
+                                <span><i class="fas fa-terminal"></i> CORE_MATRIX // SYSTEM_${p.lenguaje.toUpperCase()}</span>
+                                <span><span class="blink-dot"></span> LIVE_DIAGNOSTIC</span>
+                            </div>
+                            <pre class="hud-terminal-body"><code></code></pre>
+                        </div>
+                    `;
+                    entradaLog.innerHTML += estructuraTerminal;
+                    const cuerpoCodigo = document.getElementById(idTerminal).querySelector('code');
+                    
+                    let i = 0;
+                    function teclearCodigo() {
+                        if (i < p.contenido.length) {
+                            cuerpoCodigo.innerHTML += escaparHTML(p.contenido.charAt(i));
+                            i++;
+                            terminal.scrollTop = terminal.scrollHeight;
+                            setTimeout(teclearCodigo, 4); // El código se renderiza más rápido
+                        } else {
+                            parteActual++;
+                            procesarSiguienteParte();
+                        }
+                    }
+                    teclearCodigo();
                 }
             }
-            teclear();
+            procesarSiguienteParte();
         }
 
-        // --- RECONOCIMIENTO VOCAL ---
+        function escaparHTML(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // --- OPCIÓN B: RECONOCIMIENTO VOCAL INTELIGENTE MANOS LIBRES ---
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             const SpeechEngine = window.SpeechRecognition || window.webkitSpeechRecognition;
             reconocimientoVoz = new SpeechEngine();
@@ -410,11 +503,11 @@
             reconocimientoVoz.onstart = () => {
                 reactor.classList.add('core-listening');
                 micBtn.classList.add('active-mic');
-                logSistema("Captura vocal activa. Hable ahora...");
+                logSistema("Captura de transmisión vocal activa...");
             };
 
             reconocimientoVoz.onerror = (e) => {
-                logSistema("Error en enlace de entrada vocal: " + e.error);
+                logSistema("Fallo de enlace de entrada de voz: " + e.error);
                 desactivarEstadoMic();
             };
 
@@ -423,16 +516,9 @@
             reconocimientoVoz.onresult = (e) => {
                 const resultadoText = e.results[0][0].transcript;
                 cmdInput.value = resultadoText;
+                // Envía el comando de voz de forma automática al servidor sin presionar nada
                 enviarMensajeConsola();
             };
-        } else {
-            logSistema("ADVERTENCIA: Entrada por micro nativo no soportada.");
-        }
-
-        function sincronizarCanalAudio() {
-            window.AudioContext = window.AudioContext || window.webkitAudioContext;
-            const ctx = new AudioContext();
-            logSistema("Canal de salida de audio sincronizado correctamente.");
         }
 
         function conmutarMicrofono() {
@@ -445,18 +531,24 @@
             micBtn.classList.remove('active-mic');
         }
 
+        function sincronizarCanalAudio() {
+            window.AudioContext = window.AudioContext || window.webkitAudioContext;
+            new AudioContext();
+            logSistema("Canal de salida sincronizado. Jarvis está listo para hablar.");
+        }
+
         function evaluarRetorno(e) {
             if (e.key === 'Enter') enviarMensajeConsola();
         }
 
-        // --- ENVIAR MENSAJE AL SERVER ---
+        // --- TRANSMISIÓN DE DATOS ---
         async function enviarMensajeConsola() {
             const msg = cmdInput.value.trim();
             if (!msg) return;
 
             cmdInput.value = '';
             terminal.innerHTML += `<div class="log-entry user-cmd">> Ennio: ${msg}</div>`;
-            irAlFondo();
+            terminal.scrollTop = terminal.scrollHeight;
 
             try {
                 const respuesta = await fetch('/chat', {
@@ -467,67 +559,50 @@
                 
                 const datos = await respuesta.json();
                 
-                // Aplicamos efecto typewriter para Tercero
-                escribirEnTerminal(`[TERCERO]: ${datos.text}`, 'tercero-resp');
+                // Usamos el nuevo formateador avanzado de código
+                escribirEnTerminalMecatronica(`[TERCERO]: ${datos.text}`, 'tercero-resp');
 
-                // CORRECCIÓN: Validar datos.audio_url directamente de FastAPI
-                if (datos.audio_url) {
-                    emitirAudioNucleo(datos.audio_url);
-                }
+                if (datos.audio_url) { emitirAudioNucleo(datos.audio_url); }
             } catch (err) {
-                logSistema("Error crítico en envío de paquete de datos.");
+                logSistema("Error crítico en transmisión de subpaquetes.");
             }
         }
 
-        // --- SUBIDA DE ARCHIVOS ---
         async function procesarCargaArchivo() {
             const cargador = document.getElementById('matrix-file-loader');
             if (cargador.files.length === 0) return;
 
             const archivo = cargador.files[0];
-            logSistema(`Inyectando archivo en la matriz: ${archivo.name}...`);
+            logSistema(`Subiendo archivo a la matriz: ${archivo.name}...`);
 
             const formData = new FormData();
             formData.append("user_id", "Ennio");
             formData.append("file", archivo);
 
             try {
-                const respuesta = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
+                const respuesta = await fetch('/upload', { method: 'POST', body: formData });
                 const datos = await respuesta.json();
                 
-                logSistema(`Transmisión completa de ${archivo.name}.`);
-                escribirEnTerminal(`[TERCERO]: ${datos.text}`, 'tercero-resp');
+                logSistema(`Archivo ${archivo.name} indexado.`);
+                escribirEnTerminalMecatronica(`[TERCERO]: ${datos.text}`, 'tercero-resp');
 
-                // CORRECCIÓN: Validar datos.audio_url directamente de FastAPI
-                if (datos.audio_url) {
-                    emitirAudioNucleo(datos.audio_url);
-                }
+                if (datos.audio_url) { emitirAudioNucleo(datos.audio_url); }
             } catch (err) {
-                logSistema("Fallo en la carga de archivo binario.");
+                logSistema("Error en la carga de matriz binaria.");
             }
         }
 
         function emitirAudioNucleo(url) {
             const streamingAudio = new Audio(`${url}?t=${new Date().getTime()}`);
-            
             streamingAudio.onplay = () => { reactor.classList.add('core-speaking'); };
             streamingAudio.onended = () => { reactor.classList.remove('core-speaking'); };
-
-            streamingAudio.play().catch(err => {
-                logSistema("Salida vocal bloqueada por el navegador. Haga clic en 'AUTORIZAR AUDIO'.");
-                reactor.classList.remove('core-speaking');
-            });
+            streamingAudio.play().catch(() => { reactor.classList.remove('core-speaking'); });
         }
 
         function logSistema(texto) {
             terminal.innerHTML += `<div class="log-entry system-alert">> [SISTEMA]: ${texto}</div>`;
-            irAlFondo();
+            terminal.scrollTop = terminal.scrollHeight;
         }
-
-        function irAlFondo() { terminal.scrollTop = terminal.scrollHeight; }
     </script>
 </body>
 </html>
