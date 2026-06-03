@@ -37,8 +37,17 @@ class TerceroCore:
 
     def chat(self, user_id: str, message: str) -> dict:
         try:
-            # 1. Recuperación cuántica del historial real persistente desde SQLite
-            history = self._recuperar_historial_sqlite(user_id, limite=15)
+            # 1. Recuperación cuántica del historial persistente desde SQLite
+            # Solicitamos 16 registros para compensar la inserción previa en main.py
+            raw_history = self._recuperar_historial_sqlite(user_id, limite=16)
+            
+            # CONTROL DE TOKENS: Si el último mensaje guardado coincide con el actual, 
+            # lo removemos del historial para evitar la duplicación de contexto en el LLM.
+            if raw_history and raw_history[-1]["role"] == "user" and raw_history[-1]["content"] == message:
+                history = raw_history[:-1]
+            else:
+                history = raw_history[-15:] # Mantener una ventana máxima estable de 15 mensajes
+
             memory = self.memory.recall(user_id)
 
             # INTERCEPTOR Y EXTRACTOR DE MATRIZ DE ARCHIVOS AVANZADO (MÓDULO DE AGENTE)
@@ -85,7 +94,7 @@ class TerceroCore:
                 "content": system_content
             }
 
-            # Compilación final del paquete de mensajes
+            # Compilación final del paquete de mensajes libre de duplicaciones
             messages = [system_message] + history + [{"role": "user", "content": message}]
             answer = self.llm.chat(messages)
 
