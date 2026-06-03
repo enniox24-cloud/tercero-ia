@@ -3,666 +3,538 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tercero OS - Mainframe Cognitivo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <title>TERCERO OS | MAINFRAME V3.0</title>
     <style>
         :root {
-            --bg-main: #060913;
-            --bg-sidebar: #0b1120;
-            --primary-ui: #00f2fe;
-            --secondary-ui: #4facfe;
-            --text-main: #e0e6ed;
-            --text-muted: #8892b0;
-            --user-bubble: #1a2a4a;
-            --ai-bubble: #0f172a;
-            --glow: 0 0 15px rgba(0, 242, 254, 0.6);
-            --neon-green: #39ff14;
-            --neon-orange: #ff9900;
+            --neon-cyan: #00f2fe;
+            --neon-glow: rgba(0, 242, 254, 0.25);
+            --dark-space: #03060f;
+            --panel-bg: rgba(6, 13, 26, 0.7);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        * { box-sizing: border-box; }
+
         body {
-            font-family: 'Roboto', sans-serif;
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            height: 100vh;
+            background-color: var(--dark-space);
+            color: var(--neon-cyan);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 0;
             display: flex;
+            height: 100vh;
             overflow: hidden;
         }
 
-        #sidebar {
-            width: 260px;
-            background-color: var(--bg-sidebar);
+        #mainframe-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            border: 2px solid var(--neon-cyan);
+            box-shadow: 0 0 20px var(--neon-glow), inset 0 0 20px var(--neon-glow);
+            margin: 10px;
+            background: linear-gradient(180deg, var(--dark-space) 0%, #051026 100%);
+        }
+
+        /* Panel Izquierdo: Telemetría y Núcleo */
+        #telemetry-panel {
+            width: 350px;
+            border-right: 2px solid var(--neon-cyan);
+            background: var(--panel-bg);
             display: flex;
             flex-direction: column;
-            padding: 20px;
-            border-right: 1px solid #14223d;
+            align-items: center;
+            padding: 25px;
+            justify-content: space-between;
             transition: all 0.3s ease;
         }
 
-        #brand {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 20px;
-            color: var(--primary-ui);
-            text-align: center;
-            margin-bottom: 30px;
-            text-shadow: var(--glow);
-            letter-spacing: 2px;
-        }
-
-        .new-chat-btn {
-            background: linear-gradient(45deg, var(--secondary-ui), var(--primary-ui));
-            color: #000;
-            border: none;
-            padding: 12px;
-            border-radius: 8px;
-            font-family: 'Orbitron', sans-serif;
+        .panel-title {
+            font-size: 1.1rem;
             font-weight: bold;
-            cursor: pointer;
-            margin-bottom: 20px;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .new-chat-btn:hover { 
-            transform: scale(1.03);
-            box-shadow: 0 0 10px rgba(0, 242, 254, 0.4);
-        }
-
-        #chats-list { flex: 1; overflow-y: auto; }
-        .chat-item {
-            padding: 12px 10px;
-            color: var(--text-muted);
-            cursor: pointer;
-            border-radius: 5px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-size: 14px;
-            border-left: 2px solid transparent;
-            margin-bottom: 4px;
-        }
-        .chat-item:hover, .chat-item.active { 
-            background-color: #14223d; 
-            color: var(--primary-ui);
-            border-left-color: var(--primary-ui);
+            letter-spacing: 2px;
+            text-align: center;
+            border-bottom: 1px solid var(--neon-cyan);
+            width: 100%;
+            padding-bottom: 10px;
+            text-shadow: 0 0 8px var(--neon-cyan);
         }
 
-        #main-chat { flex: 1; display: flex; flex-direction: column; position: relative; }
-        
-        /* CONTENEDOR CENTRAL DEL CORE ANIMADO HUD */
-        #hud-top-bar {
-            background-color: rgba(11, 17, 32, 0.8);
-            border-bottom: 1px solid #14223d;
-            padding: 15px;
+        /* Núcleo Central de Animación - Estilo Jarvis */
+        #arc-reactor {
+            width: 180px;
+            height: 180px;
+            border: 6px double var(--neon-cyan);
+            border-radius: 50%;
             display: flex;
-            justify-content: center;
             align-items: center;
-            backdrop-filter: blur(5px);
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 0 15px var(--neon-cyan);
+            transition: all 0.3s ease;
         }
 
-        #hud-core {
+        #arc-reactor::before {
+            content: '';
+            position: absolute;
+            width: 130px;
+            height: 130px;
+            border: 2px dashed var(--neon-cyan);
+            border-radius: 50%;
+            animation: rotateCore 12s linear infinite;
+        }
+
+        #inner-core {
             width: 70px;
             height: 70px;
+            background-color: var(--neon-cyan);
             border-radius: 50%;
-            border: 3px dashed var(--primary-ui);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: var(--glow);
-            animation: rotateCore 10s linear infinite;
-            transition: all 0.4s ease;
+            box-shadow: 0 0 25px var(--neon-cyan);
+            transition: transform 0.2s ease;
         }
 
-        #hud-core-inner {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background-color: rgba(0, 242, 254, 0.1);
-            border: 2px solid var(--primary-ui);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 10px;
-            color: var(--primary-ui);
-            animation: pulseCore 2s ease-in-out infinite alternate;
+        /* Animación Activa de Voz */
+        .core-speaking {
+            animation: corePulse 1.2s ease-in-out infinite alternate !important;
         }
 
-        /* ESTADOS DEL CORE ANIMADO */
-        #hud-core.procesando {
-            border-color: var(--neon-orange);
-            box-shadow: 0 0 15px rgba(255, 153, 0, 0.6);
-            animation-duration: 2s;
+        .core-listening {
+            border-color: #ff0055 !important;
+            box-shadow: 0 0 25px #ff0055 !important;
         }
-        #hud-core.procesando #hud-core-inner {
-            background-color: rgba(255, 153, 0, 0.1);
-            border-color: var(--neon-orange);
-            color: var(--neon-orange);
+        .core-listening #inner-core {
+            background-color: #ff0055 !important;
+            box-shadow: 0 0 30px #ff0055 !important;
         }
 
-        #hud-core.hablando {
-            border-color: var(--neon-green);
-            box-shadow: 0 0 20px rgba(57, 255, 20, 0.7);
-            animation-duration: 4s;
-        }
-        #hud-core.hablando #hud-core-inner {
-            background-color: rgba(57, 255, 20, 0.1);
-            border-color: var(--neon-green);
-            color: var(--neon-green);
-        }
-
-        /* DISPOSICIÓN PRINCIPAL DE PANTALLA DIVIDIDA */
-        #workspace {
+        /* Panel Derecho: Consola y Terminal */
+        #console-panel {
             flex: 1;
             display: flex;
-            overflow: hidden;
-        }
-
-        #chat-window { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
-
-        /* PANEL DERECHO DE TELEMETRÍA MECATRÓNICA */
-        #hud-telemetry {
-            width: 280px;
-            background-color: var(--bg-sidebar);
-            border-left: 1px solid #14223d;
+            flex-direction: column;
             padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-        }
-
-        .telemetry-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 13px;
-            color: var(--primary-ui);
-            letter-spacing: 1px;
-            border-bottom: 1px solid #14223d;
-            padding-bottom: 8px;
-            text-transform: uppercase;
-        }
-
-        .metric-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .metric-labels {
-            display: flex;
-            justify-content: space-between;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 11px;
-            color: var(--text-muted);
-        }
-
-        .progress-bar-bg {
-            width: 100%;
-            height: 8px;
-            background-color: #0c1222;
-            border-radius: 4px;
+            background: rgba(2, 4, 10, 0.85);
             overflow: hidden;
-            border: 1px solid #1e2d4a;
         }
 
-        .progress-bar-fill {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, var(--secondary-ui), var(--primary-ui));
-            box-shadow: 0 0 8px var(--primary-ui);
-            transition: width 0.5s ease;
-        }
-
-        /* CONSOLA DE LOGS SERIALES NEÓN */
-        #serial-console {
+        #terminal-display {
             flex: 1;
-            background-color: #04070d;
-            border: 1px solid #14223d;
-            border-radius: 6px;
-            padding: 12px;
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 11px;
-            color: var(--neon-green);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px;
             overflow-y: auto;
-            white-space: pre-wrap;
-            line-height: 1.4;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9);
         }
 
-        /* CONFIGURACIÓN DE MENSAJES Y BURBUJAS */
-        .message { max-width: 75%; display: flex; gap: 10px; animation: fadeIn 0.3s ease; }
-        .message.user { align-self: flex-end; flex-direction: row-reverse; }
-        .message.ai { align-self: flex-start; }
+        .log-entry { margin: 10px 0; line-height: 1.4; font-size: 1rem; }
+        .user-cmd { color: #ffffff; font-weight: bold; }
+        .tercero-resp { color: var(--neon-cyan); text-shadow: 0 0 3px var(--neon-glow); }
+        .system-alert { color: #ffaa00; font-size: 0.85rem; }
 
-        .avatar { width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Orbitron', sans-serif; font-weight: bold; font-size: 13px; }
-        .user .avatar { background-color: var(--user-bubble); color: var(--primary-ui); border: 1px solid var(--primary-ui); }
-        .ai .avatar { background-color: var(--bg-sidebar); border: 1px solid var(--primary-ui); color: var(--primary-ui); text-shadow: var(--glow); }
-
-        .bubble { padding: 15px 20px; border-radius: 12px; line-height: 1.6; font-size: 14.5px; }
-        .user .bubble { background-color: var(--user-bubble); border-radius: 12px 12px 0 12px; color: #fff; }
-        .ai .bubble { background-color: var(--ai-bubble); border-radius: 12px 12px 12px 0; border: 1px solid #14223d; }
-
-        .chat-image { max-width: 100%; border-radius: 8px; margin-top: 10px; border: 2px solid #1a2a4a; cursor: pointer; }
-        .generated-art { max-width: 400px; border: 2px solid var(--primary-ui); box-shadow: var(--glow); }
-
-        .pdf-download-link {
-            display: inline-flex; align-items: center; gap: 10px; background-color: #1a2a4a; color: var(--primary-ui);
-            text-decoration: none; padding: 10px 15px; border-radius: 5px; margin-top: 10px; font-size: 14px; border: 1px solid var(--primary-ui);
+        /* Controles de Entrada */
+        #interaction-deck {
+            display: flex;
+            gap: 12px;
+            align-items: center;
         }
-        .pdf-download-link:hover { background-color: #243b6a; }
 
-        #input-area { padding: 20px 30px; position: relative; background-color: rgba(6, 9, 19, 0.9); }
-        #file-preview-bar {
-            background-color: var(--bg-sidebar); border: 1px solid #14223d; border-radius: 10px 10px 0 0;
-            padding: 10px 15px; display: none; align-items: center; gap: 10px; margin-bottom: -1px;
+        .hud-btn {
+            background: transparent;
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            padding: 14px 22px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 5px rgba(0, 242, 254, 0.1);
+            white-space: nowrap;
         }
-        #file-preview-bar img { height: 40px; border-radius: 4px; }
-        #file-preview-bar .file-info { flex: 1; font-size: 12px; color: var(--text-muted); }
-        #file-preview-bar .remove-file { color: #ff4444; cursor: pointer; font-weight: bold; }
 
-        #input-container { background-color: var(--bg-sidebar); border: 1px solid #14223d; border-radius: 10px; display: flex; align-items: center; padding: 5px 15px; gap: 10px; transition: border-color 0.3s; }
-        #input-container:focus-within { border-color: var(--primary-ui); box-shadow: 0 0 10px rgba(0,242,254,0.15); }
-        #user-id-display { font-family: 'Orbitron', sans-serif; font-size: 12px; color: var(--primary-ui); border-right: 1px solid #14223d; padding-right: 10px; letter-spacing: 1px; }
+        .hud-btn:hover {
+            background: var(--neon-cyan);
+            color: var(--dark-space);
+            box-shadow: 0 0 15px var(--neon-cyan);
+        }
 
-        input[type="file"] { display: none; }
-        .icon-btn { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 10px; transition: color 0.2s; }
-        .icon-btn:hover, .icon-btn.active { color: var(--primary-ui); }
-        #text-input { flex: 1; background: none; border: none; color: var(--text-main); padding: 15px 0; font-size: 15px; }
-        #send-btn { background-color: var(--primary-ui); color: #000; border: none; width: 45px; height: 45px; border-radius: 50%; font-weight: bold; cursor: pointer; font-size: 18px; box-shadow: 0 0 8px rgba(0,242,254,0.3); }
+        #mic-btn.active-mic {
+            border-color: #ff0055;
+            color: #ff0055;
+            animation: alertBlink 1s infinite alternate;
+        }
 
-        /* ANIMACIONES */
-        @keyframes rotateCore { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes pulseCore { from { transform: scale(0.95); opacity: 0.8; } to { transform: scale(1.05); opacity: 1; } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #command-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(0, 242, 254, 0.5);
+            color: #ffffff;
+            padding: 14px;
+            font-family: inherit;
+            font-size: 1rem;
+            outline: none;
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5);
+        }
+
+        #command-input:focus {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 10px var(--neon-glow), inset 0 0 5px rgba(0, 242, 254, 0.2);
+        }
+
+        /* Animaciones CSS Keyframes */
+        @keyframes rotateCore {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes corePulse {
+            0% { transform: scale(1); box-shadow: 0 0 15px var(--neon-cyan); }
+            100% { transform: scale(1.15); box-shadow: 0 0 35px var(--neon-cyan); border-color: #ffffff; }
+        }
+
+        @keyframes alertBlink {
+            0% { box-shadow: 0 0 5px rgba(255, 0, 85, 0.2); }
+            100% { box-shadow: 0 0 20px rgba(255, 0, 85, 0.6); background: rgba(255, 0, 85, 0.1); }
+        }
+
+        /* ========================================================
+           OPTIMIZACIÓN RESPONSIVA (MÓVILES, TABLETS E IPADS)
+           ======================================================== */
+        
+        /* Ajustes para Tablets / iPads en orientación vertical (Menos de 1024px) */
+        @media (max-width: 1024px) {
+            #mainframe-container {
+                flex-direction: column;
+                margin: 5px;
+            }
+            #telemetry-panel {
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 2px solid var(--neon-cyan);
+                padding: 15px;
+                flex-direction: row;
+                gap: 15px;
+            }
+            #arc-reactor {
+                width: 100px;
+                height: 100px;
+            }
+            #arc-reactor::before {
+                width: 70px;
+                height: 70px;
+            }
+            #inner-core {
+                width: 40px;
+                height: 40px;
+            }
+            #telemetry-panel > div:last-child {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+        }
+
+        /* Ajustes estrictos para Teléfonos Celulares (Menos de 768px) */
+        @media (max-width: 768px) {
+            body {
+                overflow: auto; /* Permite scroll global si el teclado del móvil se despliega */
+                height: auto;
+                min-height: 100vh;
+            }
+            #mainframe-container {
+                height: auto;
+                min-height: calc(100vh - 10px);
+                flex-direction: column;
+            }
+            #telemetry-panel {
+                flex-direction: column;
+                padding: 15px;
+                gap: 10px;
+            }
+            #arc-reactor {
+                width: 90px;
+                height: 90px;
+            }
+            #arc-reactor::before {
+                width: 60px;
+                height: 60px;
+            }
+            #inner-core {
+                width: 30px;
+                height: 30px;
+            }
+            #console-panel {
+                padding: 12px;
+                height: 60vh; /* Da un espacio óptimo al chat en pantallas táctiles */
+            }
+            .panel-title {
+                font-size: 0.9rem;
+            }
+            .log-entry {
+                font-size: 0.85rem;
+            }
+            #interaction-deck {
+                display: grid;
+                grid-template-columns: 1fr 1fr; /* Convierte los botones inferiores en una cuadrícula limpia */
+                gap: 8px;
+            }
+            #command-input {
+                grid-column: span 2; /* El campo de texto ocupa todo el ancho de la fila */
+                font-size: 0.9rem;
+                padding: 10px;
+            }
+            .hud-btn {
+                padding: 10px 12px;
+                font-size: 0.8rem;
+                text-align: center;
+                justify-content: center;
+                display: flex;
+                align-items: center;
+            }
+            /* El botón ejecutar ocupa las dos columnas abajo para no romperse */
+            #interaction-deck > button:last-child {
+                grid-column: span 2;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <div id="sidebar">
-        <div id="brand">TERCERO OS</div>
-        <button class="new-chat-btn" onclick="iniciarNuevoChat()">+ Nuevo Chat</button>
-        <div id="chats-list"></div>
-    </div>
-
-    <div id="main-chat">
-        <div id="hud-top-bar">
-            <div id="hud-core">
-                <div id="hud-core-inner">SYS_ON</div>
+    <div id="mainframe-container">
+        <div id="telemetry-panel">
+            <div class="panel-title">NÚCLEO COGNITIVO</div>
+            
+            <div id="arc-reactor">
+                <div id="inner-core"></div>
             </div>
-        </div>
-
-        <div id="workspace">
-            <div id="chat-window"></div>
-
-            <div id="hud-telemetry">
-                <div class="metric-group">
-                    <div class="telemetry-title">Telemetría PC</div>
-                    <div class="metric-labels">
-                        <span>NÚCLEO CPU</span>
-                        <span id="cpu-value">0%</span>
-                    </div>
-                    <div class="progress-bar-bg">
-                        <div id="cpu-bar" class="progress-bar-fill"></div>
-                    </div>
-                </div>
-
-                <div class="metric-group">
-                    <div class="metric-labels">
-                        <span>MEMORIA RAM</span>
-                        <span id="ram-value">0%</span>
-                    </div>
-                    <div class="progress-bar-bg">
-                        <div id="ram-bar" class="progress-bar-fill"></div>
-                    </div>
-                </div>
-
-                <div class="metric-group" style="flex: 1; display: flex; flex-direction: column;">
-                    <div class="telemetry-title">Logs de Automatización</div>
-                    <div id="serial-console">Iniciando escaneo de ráfagas seriales...</div>
+            
+            <div style="width: 100%;">
+                <button class="hud-btn" style="width: 100%; margin-bottom: 15px;" onclick="sincronizarCanalAudio()">AUTORIZAR AUDIO</button>
+                
+                <div id="hud-telemetry-display" style="font-size: 0.75rem; color: rgba(0, 242, 254, 0.8); text-align: center; line-height: 1.6; font-family: monospace;">
+                    CHRONO: <span id="telemetry-clock">00:00:00</span><br>
+                    BATTERY: <span id="telemetry-battery">SCANNING...</span><br>
+                    NET LATENCY: <span id="telemetry-ping">0 ms</span><br>
+                    MATRIX HOST: RENDER CLOUD V3
                 </div>
             </div>
         </div>
 
-        <div id="input-area">
-            <div id="file-preview-bar">
-                <img id="p-img-preview" src="" alt="" style="display:none;">
-                <div id="p-file-icon" style="font-size:30px; display:none;">📄</div>
-                <div class="file-info">
-                    <span id="p-file-name">nombre.archivo</span>
-                    <span id="p-file-size" style="opacity:0.6;">(0 KB)</span>
-                </div>
-                <span class="remove-file" onclick="cancelarArchivo()">×</span>
+        <div id="console-panel">
+            <div class="panel-title" style="text-align: left; margin-bottom: 15px;">TERCERO OS ONLINE v3.0 // MAINFRAME HUD</div>
+            
+            <div id="terminal-display">
+                <div class="log-entry system-alert">> [SISTEMA]: Enlace inicializado. Presione 'AUTORIZAR AUDIO' antes de emitir transmisiones operativas.</div>
             </div>
-            <div id="input-container">
-                <div id="user-id-display">ENNIO</div>
-                <input type="file" id="file-input" onchange="previsualizarArchivo()">
-                <button class="icon-btn" title="Subir Imagen o PDF" onclick="document.getElementById('file-input').click()">➕</button>
-                <button class="icon-btn" id="mic-btn" title="Hablar" onclick="toggleMicrofono()">🎤</button>
-                <input type="text" id="text-input" placeholder="Ordene o envíe planos, señor..." onkeypress="manejarEnter(event)">
-                <button id="send-btn" onclick="enviarMensaje()">➤</button>
+
+            <div id="interaction-deck">
+                <button id="mic-btn" class="hud-btn" onclick="conmutarMicrofono()">🎤 VOCAL</button>
+                
+                <input type="file" id="matrix-file-loader" style="display: none;" onchange="procesarCargaArchivo()">
+                <button class="hud-btn" onclick="document.getElementById('matrix-file-loader').click()">📁 MATRIZ</button>
+                
+                <input type="text" id="command-input" placeholder="Escriba un comando para el sistema o hable..." onkeypress="evaluarRetorno(event)">
+                <button class="hud-btn" onclick="enviarMensajeConsola()">EJECUTAR</button>
             </div>
         </div>
     </div>
 
     <script>
-        let USER_ID = "Ennio_Op";
-        let CURRENT_CHAT_ID = "chat_inicial";
-        let local_chats = {};
-        let archivo_pendiente = null;
+        const terminal = document.getElementById('terminal-display');
+        const reactor = document.getElementById('arc-reactor');
+        const micBtn = document.getElementById('mic-btn');
+        const cmdInput = document.getElementById('command-input');
+        
+        let reconocimientoVoz;
+        let controlVozActivo = false;
 
-        let mediaRecorder = null;
-        let audioChunks = [];
-        let estaGrabando = false;
-        let audioActual = null;
+        // --- SISTEMA DE TELEMETRÍA EN TIEMPO REAL (PASO 1 HUD) ---
+        function actualizarRelojHUD() {
+            const ahora = new Date();
+            const hrs = String(ahora.getHours()).padStart(2, '0');
+            const mins = String(ahora.getMinutes()).padStart(2, '0');
+            const secs = String(ahora.getSeconds()).padStart(2, '0');
+            document.getElementById('telemetry-clock').innerText = `${hrs}:${mins}:${secs}`;
+        }
+        setInterval(actualizarRelojHUD, 1000);
 
-        window.onload = async () => {
-            local_chats = JSON.parse(localStorage.getItem(`chats_${USER_ID}`)) || {};
-            if(!local_chats[CURRENT_CHAT_ID]) {
-                local_chats[CURRENT_CHAT_ID] = { titulo: "Conversación Nueva", mensajes: [] };
-            }
-            actualizarListaChatsSideBar();
-            cargarChatSeleccionado();
-            
-            // INICIAR LOOP DE TELEMETRÍA AUTOMÁTICA (Cada 1 segundo)
-            setInterval(actualizarTelemetriaHUD, 1000);
-        };
-
-        // LOOP DE RECOGIDA DE DATOS REALES DE PC Y SERIAL
-        async function actualizarTelemetriaHUD() {
-            try {
-                const res = await fetch('/api/telemetria');
-                const data = await res.json();
-                
-                // Actualizar Barras de Progreso Visuales
-                document.getElementById('cpu-value').innerText = `${Math.round(data.cpu)}%`;
-                document.getElementById('cpu-bar').style.width = `${data.cpu}%`;
-                
-                document.getElementById('ram-value').innerText = `${Math.round(data.ram)}%`;
-                document.getElementById('ram-bar').style.width = `${data.ram}%`;
-                
-                // Actualizar Consola de Logs Seriales
-                if (data.serial_log) {
-                    const consoleElement = document.getElementById('serial-console');
-                    if (!consoleElement.innerText.includes(data.serial_log)) {
-                        consoleElement.innerHTML += `\n[${new Date().toLocaleTimeString()}] ${data.serial_log}`;
-                        consoleElement.scrollTop = consoleElement.scrollHeight;
-                    }
+        async function inicializarTelemetriaBateria() {
+            if ('getBattery' in navigator) {
+                try {
+                    const battery = await navigator.getBattery();
+                    const cambiarMétricas = () => {
+                        const nivel = Math.round(battery.level * 100);
+                        const estadoCarga = battery.charging ? " [CHARGING]" : "";
+                        const contenedor = document.getElementById('telemetry-battery');
+                        contenedor.innerText = `${nivel}%${estadoCarga}`;
+                        contenedor.style.color = nivel <= 20 && !battery.charging ? "#ff0055" : "var(--neon-cyan)";
+                    };
+                    cambiarMétricas();
+                    battery.addEventListener('levelchange', cambiarMétricas);
+                    battery.addEventListener('chargingchange', cambiarMétricas);
+                } catch (e) {
+                    document.getElementById('telemetry-battery').innerText = "OFFLINE";
                 }
+            } else {
+                document.getElementById('telemetry-battery').innerText = "NOT SUPPORTED";
+            }
+        }
+        inicializarTelemetriaBateria();
+
+        async function calcularLatenciaRed() {
+            const inicio = Date.now();
+            try {
+                await fetch('/chat', { method: 'OPTIONS' }).catch(() => {});
+                const latencia = Date.now() - inicio;
+                document.getElementById('telemetry-ping').innerText = `${latencia} ms`;
             } catch (err) {
-                console.log("Falla de sincronización con el endpoint de telemetría.");
+                document.getElementById('telemetry-ping').innerText = "ERR ms";
+            }
+        }
+        setInterval(calcularLatenciaRed, 5000);
+        calcularLatenciaRed();
+        // ---------------------------------------------------------
+
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechEngine = window.SpeechRecognition || window.webkitSpeechRecognition;
+            reconocimientoVoz = new SpeechEngine();
+            reconocimientoVoz.continuous = false;
+            reconocimientoVoz.interimResults = false;
+            reconocimientoVoz.lang = 'es-VE';
+
+            reconocimientoVoz.onstart = () => {
+                reactor.classList.add('core-listening');
+                micBtn.classList.add('active-mic');
+                logSistema("Captura vocal activa. Hable ahora...");
+            };
+
+            reconocimientoVoz.onerror = (e) => {
+                logSistema("Error en enlace de entrada vocal: " + e.error);
+                desactivarEstadoMic();
+            };
+
+            reconocimientoVoz.onend = () => {
+                desactivarEstadoMic();
+            };
+
+            reconocimientoVoz.onresult = (e) => {
+                const resultadoText = e.results[0][0].transcript;
+                cmdInput.value = resultadoText;
+                enviarMensajeConsola();
+            };
+        } else {
+            logSistema("ADVERTENCIA: Entrada por micro nativo no soportada en este navegador.");
+        }
+
+        function sincronizarCanalAudio() {
+            window.AudioContext = window.AudioContext || window.webkitAudioContext;
+            const ctx = new AudioContext();
+            logSistema("Canal de salida de audio sincronizado correctamente.");
+        }
+
+        function conmutarMicrofono() {
+            if (!reconocimientoVoz) return;
+            try {
+                reconocimientoVoz.start();
+            } catch(err) {
+                reconocimientoVoz.stop();
             }
         }
 
-        // CONTROL DINÁMICO DE ESTADOS DEL ANILLO HOLOGRÁFICO CENTRAL
-        function cambiarEstadoCore(estado) {
-            const core = document.getElementById('hud-core');
-            const inner = document.getElementById('hud-core-inner');
-            core.className = ""; // Limpiar clases previas
-            
-            if (estado === 'procesando') {
-                core.classList.add('procesando');
-                inner.innerText = "PRCZ_OS";
-            } else if (estado === 'hablando') {
-                core.classList.add('hablando');
-                inner.innerText = "VOZ_OUT";
-            } else {
-                inner.innerText = "SYS_ON";
-            }
+        function desactivarEstadoMic() {
+            reactor.classList.remove('core-listening');
+            micBtn.classList.remove('active-mic');
         }
 
-        function reproducirVozNativa(audioFile) {
-            if (!audioFile) return;
-            if (audioActual) {
-                audioActual.pause();
-                audioActual.currentTime = 0;
-            }
-            audioActual = new Audio(`/static/audio/${audioFile}`);
-            
-            // Reaccionar visualmente cuando empiece y termine la voz de la IA
-            audioActual.onplay = () => cambiarEstadoCore('hablando');
-            audioActual.onended = () => cambiarEstadoCore('estable');
-            
-            audioActual.play().catch(err => {
-                console.log("Interacción requerida para reproducción de voz:", err);
-                cambiarEstadoCore('estable');
-            });
+        function evaluarRetorno(e) {
+            if (e.key === 'Enter') enviarMensajeConsola();
         }
 
-        function actualizarListaChatsSideBar() {
-            const list = document.getElementById('chats-list');
-            list.innerHTML = "";
-            Object.keys(local_chats).forEach(id => {
-                const item = document.createElement('div');
-                item.className = `chat-item ${id === CURRENT_CHAT_ID ? 'active' : ''}`;
-                item.innerText = local_chats[id].titulo;
-                item.onclick = () => seleccionarChat(id);
-                list.appendChild(item);
-            });
-        }
+        async function enviarMensajeConsola() {
+            const msg = cmdInput.value.trim();
+            if (!msg) return;
 
-        function seleccionarChat(id) {
-            CURRENT_CHAT_ID = id;
-            actualizarListaChatsSideBar();
-            cargarChatSeleccionado();
-        }
-
-        function iniciarNuevoChat() {
-            const nuevo_id = "chat_" + Date.now();
-            local_chats[nuevo_id] = { titulo: "Nuevo Vector de Datos", mensajes: [] };
-            guardarMemoriaLocal();
-            seleccionarChat(nuevo_id);
-        }
-
-        function guardarMemoriaLocal() { localStorage.setItem(`chats_${USER_ID}`, JSON.stringify(local_chats)); }
-
-        function cargarChatSeleccionado() {
-            const windowChat = document.getElementById('chat-window');
-            windowChat.innerHTML = "";
-            local_chats[CURRENT_CHAT_ID].mensajes.forEach(msg => {
-                crearBurbuja(msg.role, msg.content, msg.multimedia);
-            });
-            windowChat.scrollTop = windowChat.scrollHeight;
-        }
-
-        function previsualizarArchivo() {
-            const file = document.getElementById('file-input').files[0];
-            if (!file) return;
-            archivo_pendiente = file;
-            const bar = document.getElementById('file-preview-bar');
-            const imgP = document.getElementById('p-img-preview');
-            const iconP = document.getElementById('p-file-icon');
-
-            document.getElementById('p-file-name').innerText = file.name;
-            document.getElementById('p-file-size').innerText = `(${(file.size/1024).toFixed(1)} KB)`;
-            bar.style.display = 'flex';
-
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = e => { imgP.src = e.target.result; imgP.style.display = 'block'; };
-                reader.readAsDataURL(file);
-                iconP.style.display = 'none';
-            } else {
-                imgP.style.display = 'none';
-                iconP.style.display = 'block';
-            }
-        }
-
-        function cancelarArchivo() {
-            archivo_pendiente = null;
-            document.getElementById('file-input').value = "";
-            document.getElementById('file-preview-bar').style.display = 'none';
-        }
-
-        function crearBurbuja(role, texto, multimedia = null) {
-            const windowChat = document.getElementById('chat-window');
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `message ${role === 'user' ? 'user' : 'ai'}`;
-
-            const avatar = `<div class="avatar">${role === 'user' ? 'E' : 'T'}</div>`;
-            let bubbleContent = `<div class="bubble">${texto}`;
-
-            if (multimedia) {
-                if (multimedia.tipo === 'user_uploaded_image') {
-                    bubbleContent += `<br><img src="${multimedia.url}" class="chat-image" onclick="window.open('${multimedia.url}', '_blank')">`;
-                } else if (multimedia.tipo === 'ai_generated_art') {
-                    bubbleContent += `<br><img src="${multimedia.url}" class="chat-image generated-art" onclick="window.open('${multimedia.url}', '_blank')">`;
-                } else if (multimedia.tipo === 'downloadable_pdf') {
-                    bubbleContent += `<br><a href="/download/${multimedia.filename}" class="pdf-download-link">📄 Descargar Reporte: ${multimedia.filename}</a>`;
-                }
-            }
-
-            bubbleContent += `</div>`;
-            msgDiv.innerHTML = avatar + bubbleContent;
-            windowChat.appendChild(msgDiv);
-            windowChat.scrollTop = windowChat.scrollHeight;
-        }
-
-        async function enviarMensaje() {
-            const input = document.getElementById('text-input');
-            const chatBox = document.getElementById('chat-window');
-            
-            const mensaje = input.value.trim();
-            if(!mensaje && !archivo_pendiente) return;
-
-            input.value = "";
-            let multimedia_data = null;
-            let actual_api_route = '/chat';
-            const formData = new FormData();
-            formData.append('user_id', USER_ID);
-            formData.append('chat_id', CURRENT_CHAT_ID);
-
-            if (archivo_pendiente) {
-                formData.append('file', archivo_pendiente);
-                formData.append('message', mensaje ? mensaje : "Analiza esta imagen.");
-                actual_api_route = '/chat-file';
-                
-                if (archivo_pendiente.type.startsWith('image/')) {
-                    const base64Img = document.getElementById('p-img-preview').src;
-                    multimedia_data = { tipo: 'user_uploaded_image', url: base64Img };
-                }
-                cancelarArchivo();
-            }
-
-            const texto_burbuja = mensaje ? mensaje : (multimedia_data ? "📸 [Imagen Adjunta]" : "📄 [Documento Adjunto]");
-
-            local_chats[CURRENT_CHAT_ID].mensajes.push({ role: 'user', content: texto_burbuja, multimedia: multimedia_data });
-            crearBurbuja('user', texto_burbuja, multimedia_data);
-            guardarMemoriaLocal();
-
-            // Core a modo procesando
-            cambiarEstadoCore('procesando');
-
-            const thinking = document.createElement('div'); 
-            thinking.id = 'thinking'; 
-            thinking.innerText = 'Tercero procesando matriz...'; 
-            thinking.style.color = '#8892b0'; 
-            thinking.style.paddingLeft = '55px'; 
-            chatBox.appendChild(thinking);
-            chatBox.scrollTop = chatBox.scrollHeight;
+            cmdInput.value = '';
+            terminal.innerHTML += `<div class="log-entry user-cmd">> Ennio: ${msg}</div>`;
+            irAlFondo();
 
             try {
-                const response = await fetch(actual_api_route, {
+                const respuesta = await fetch('/chat', {
                     method: 'POST',
-                    body: actual_api_route === '/chat-file' ? formData : JSON.stringify({user_id:USER_ID, chat_id:CURRENT_CHAT_ID, message:mensaje}),
-                    headers: actual_api_route === '/chat' ? {'Content-Type': 'application/json'} : {}
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({user_id: "Ennio", message: msg})
                 });
                 
-                const data = await response.json();
-                if(document.getElementById('thinking')) document.getElementById('thinking').remove();
+                const datos = await respuesta.json();
+                terminal.innerHTML += `<div class="log-entry tercero-resp">[TERCERO]: ${datos.text}</div>`;
+                irAlFondo();
 
-                let ai_multimedia = null;
-                if (data.generated_image) {
-                    ai_multimedia = { tipo: 'ai_generated_art', url: data.generated_image };
-                } else if (data.download_pdf) {
-                    ai_multimedia = { tipo: 'downloadable_pdf', filename: data.download_pdf };
+                if (datos.audio_file) {
+                    emitirAudioNucleo(`/uploads/responses/${datos.audio_file}`);
                 }
-
-                const respuestaTexto = data.text || data.response || "Matriz procesada.";
-
-                local_chats[CURRENT_CHAT_ID].mensajes.push({ role: 'assistant', content: respuestaTexto, multimedia: ai_multimedia });
-                crearBurbuja('ai', respuestaTexto, ai_multimedia);
-                guardarMemoriaLocal();
-
-                if (data.audio_file) {
-                    reproducirVozNativa(data.audio_file);
-                } else {
-                    cambiarEstadoCore('estable');
-                }
-
-            } catch (error) {
-                console.error(error);
-                if(document.getElementById('thinking')) document.getElementById('thinking').remove();
-                crearBurbuja('ai', "Error en el enlace de datos, señor. Matriz inestable.");
-                cambiarEstadoCore('estable');
+            } catch (err) {
+                logSistema("Error crítico en envío de paquete de datos.");
             }
         }
 
-        async function toggleMicrofono() {
-            const btn = document.getElementById('mic-btn');
-            
-            if(!estaGrabando) {
-                audioChunks = [];
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
-                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                    mediaRecorder.onstop = enviarAudioAlBackend;
-                    
-                    mediaRecorder.start(); 
-                    estaGrabando = true;
-                    btn.innerText = "🛑"; 
-                    btn.classList.add('active');
-                    cambiarEstadoCore('procesando'); // Anillo reacciona al escuchar
-                } catch (err) {
-                    console.error("Permiso de micrófono denegado:", err);
-                    alert("No se pudo acceder al micrófono. Verifique los permisos.");
-                }
-            } else {
-                if(mediaRecorder) {
-                    mediaRecorder.stop();
-                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
-                }
-                estaGrabando = false;
-                btn.innerText = "🎤"; 
-                btn.classList.remove('active');
-            }
-        }
+        async function procesarCargaArchivo() {
+            const cargador = document.getElementById('matrix-file-loader');
+            if (cargador.files.length === 0) return;
 
-        async function enviarAudioAlBackend() {
-            const btn = document.getElementById('mic-btn');
-            btn.innerText = "⏳";
-            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            const archivo = cargador.files[0];
+            logSistema(`Inyectando archivo en la matriz: ${archivo.name}...`);
+
             const formData = new FormData();
-            formData.append('user_id', USER_ID);
-            formData.append('chat_id', CURRENT_CHAT_ID);
-            formData.append('file', audioBlob, 'grabacion.wav');
+            formData.append("user_id", "Ennio");
+            formData.append("file", archivo);
 
             try {
-                const response = await fetch('/chat-audio', { method: 'POST', body: formData });
-                const data = await response.json();
-                btn.innerText = "🎤";
-
-                const textoUsuario = data.user_text || "[Audio Procesado]";
-                const textoAsistente = data.text || data.response || "Comando recibido.";
-
-                local_chats[CURRENT_CHAT_ID].mensajes.push({ role:'user', content: textoUsuario });
-                crearBurbuja('user', textoUsuario);
+                const respuesta = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const datos = await respuesta.json();
                 
-                local_chats[CURRENT_CHAT_ID].mensajes.push({ role:'assistant', content: textoAsistente });
-                crearBurbuja('ai', textoAsistente);
-                guardarMemoriaLocal();
-                
-                if (data.audio_file) {
-                    reproducirVozNativa(data.audio_file);
-                } else {
-                    cambiarEstadoCore('estable');
+                terminal.innerHTML += `<div class="log-entry system-alert">> [SISTEMA]: Transmisión completa de ${archivo.name}.</div>`;
+                terminal.innerHTML += `<div class="log-entry tercero-resp">[TERCERO]: ${datos.text}</div>`;
+                irAlFondo();
+
+                if (datos.audio_file) {
+                    emitirAudioNucleo(`/uploads/responses/${datos.audio_file}`);
                 }
-            } catch(e) { 
-                console.error(e); 
-                btn.innerText = "🎤"; 
-                cambiarEstadoCore('estable');
+            } catch (err) {
+                logSistema("Fallo en la carga de archivo binario/PDF.");
             }
         }
 
-        function manejarEnter(e) { if(e.key === 'Enter') enviarMensaje(); }
+        function emitirAudioNucleo(url) {
+            const streamingAudio = new Audio(`${url}?t=${new Date().getTime()}`);
+            
+            streamingAudio.onplay = () => {
+                reactor.classList.add('core-speaking');
+            };
+            
+            streamingAudio.onended = () => {
+                reactor.classList.remove('core-speaking');
+            };
+
+            streamingAudio.play().catch(err => {
+                logSistema("Salida vocal bloqueada por el navegador. Haga clic en 'AUTORIZAR AUDIO'.");
+                reactor.classList.remove('core-speaking');
+            });
+        }
+
+        function logSistema(texto) {
+            terminal.innerHTML += `<div class="log-entry system-alert">> [SISTEMA]: ${texto}</div>`;
+            irAlFondo();
+        }
+
+        function irAlFondo() {
+            terminal.scrollTop = terminal.scrollHeight;
+        }
     </script>
 </body>
 </html>
