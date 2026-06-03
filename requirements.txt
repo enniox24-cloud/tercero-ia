@@ -8,3 +8,4 @@ psutil
 requests
 aiohttp
 python-dotenv
+SpeechRecognition
