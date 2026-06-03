@@ -7,12 +7,14 @@ from backend.llm import LLM
 from backend.memory import MemoryManager
 from backend.tools import run_tool
 from backend.plugins.voice import VoicePlugin
+from backend.automotive import AutomotiveDiagnostic
 
 class TerceroCore:
     def __init__(self):
         self.llm = LLM()
         self.memory = MemoryManager()
         self.voice = VoicePlugin()
+        self.auto_diag = AutomotiveDiagnostic()
         # Ruta de la base de datos de memoria unificada
         self.db_path = "tercero_memory.db"
         # Definimos la ruta de la matriz de archivos para poder escanearlos
@@ -37,16 +39,15 @@ class TerceroCore:
 
     def chat(self, user_id: str, message: str) -> dict:
         try:
-            # 1. Recuperación cuántica del historial persistente desde SQLite
-            # Solicitamos 16 registros para compensar la inserción previa en main.py
+            # 1. Recuperación cuántica del historial persistente desde SQLite (Ventana de 16 para control)
             raw_history = self._recuperar_historial_sqlite(user_id, limite=16)
             
-            # CONTROL DE TOKENS: Si el último mensaje guardado coincide con el actual, 
-            # lo removemos del historial para evitar la duplicación de contexto en el LLM.
+            # CONTROL DE TOKENS: Si el último mensaje en la BD es idéntico al actual (guardado por main.py),
+            # lo removemos del historial para evitar que Llama reciba datos duplicados.
             if raw_history and raw_history[-1]["role"] == "user" and raw_history[-1]["content"] == message:
                 history = raw_history[:-1]
             else:
-                history = raw_history[-15:] # Mantener una ventana máxima estable de 15 mensajes
+                history = raw_history[-15:]
 
             memory = self.memory.recall(user_id)
 
@@ -76,9 +77,9 @@ class TerceroCore:
                             contenido_extraido = f"[Fallo al leer la matriz de texto: {str(e)}]"
                             
                     elif ext == '.pdf':
-                        contenido_extraido = f"[Documento PDF detectado en el Mainframe: '{nombre_archivo}'. Flujo de datos indexado listo para escaneo]."
+                        contenido_extraido = f"[Documento PDF detectado en el Mainframe: '{nombre_archivo}']. Flujo de datos indexado."
                     else:
-                        contenido_extraido = f"[Archivo binario/Imagen detectado en el Mainframe: '{nombre_archivo}']."
+                        contenido_extraido = f"[Archivo binario detectado en el Mainframe: '{nombre_archivo}']."
 
             # 2. Configuración de directrices del sistema de Tercero OS
             system_content = f"Eres Tercero OS, un mainframe de inteligencia avanzada. Información de usuario: {memory}. {self.llm.system_prompt}."
@@ -88,6 +89,11 @@ class TerceroCore:
                 
             if diagnostico_activo:
                 system_content += "\n\n[ALERTA DE AGENTE]: Se ha detectado un volcado de error o log crítico de consola en el archivo. Analiza las líneas de código afectadas, localiza el fallo exacto en el backend/frontend y provee una solución estructurada paso a paso."
+
+            # 3. Interceptor Mecánico Mecatrónico Automotriz
+            prompt_mecanico = self.auto_diag.analizar_consulta(message)
+            if prompt_mecanico:
+                system_content += prompt_mecanico
 
             system_message = {
                 "role": "system",
