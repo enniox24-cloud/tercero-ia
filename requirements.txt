@@ -9,3 +9,4 @@ requests
 aiohttp
 python-dotenv
 SpeechRecognition
+gTTS
