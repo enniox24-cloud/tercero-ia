@@ -40,7 +40,6 @@ async def chat(data: dict):
     
     res = core.chat(data.get("user_id"), data.get("message"))
     
-    # Construcción exacta de la URL relativa para evitar el error observado en image_199.png
     audio_file = res.get("audio_file")
     audio_url = f"/uploads/responses/{audio_file}" if audio_file else None
     
