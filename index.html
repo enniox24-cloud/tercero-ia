@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERCERO OS | MAINFRAME V3.0</title>
-    <!-- Cargamos Chart.js para el Osciloscopio de Telemetría -->
+    <title>TERCERO OS | MAINFRAME V3.5</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -13,6 +12,7 @@
             --dark-space: #03060f;
             --panel-bg: rgba(6, 13, 26, 0.7);
             --terminal-code: #102a45;
+            --neon-green: #39ff14;
         }
 
         * { box-sizing: border-box; }
@@ -38,7 +38,6 @@
             background: linear-gradient(180deg, var(--dark-space) 0%, #051026 100%);
         }
 
-        /* Panel Izquierdo: Telemetría y Núcleo */
         #telemetry-panel {
             width: 350px;
             border-right: 2px solid var(--neon-cyan);
@@ -64,7 +63,6 @@
             margin-bottom: 10px;
         }
 
-        /* Núcleo Central de Animación - Estilo Jarvis */
         #arc-reactor {
             width: 150px;
             height: 150px;
@@ -98,7 +96,6 @@
             transition: transform 0.2s ease;
         }
 
-        /* Animación Activa de Voz */
         .core-speaking {
             animation: corePulse 1.2s ease-in-out infinite alternate !important;
         }
@@ -112,7 +109,6 @@
             box-shadow: 0 0 30px #ff0055 !important;
         }
 
-        /* BARRAS DE TELEMETRÍA DE NEÓN */
         .telemetry-bar-container {
             width: 100%;
             background: rgba(0, 0, 0, 0.5);
@@ -132,7 +128,6 @@
             transition: width 0.5s ease, background-color 0.5s ease;
         }
 
-        /* Contenedor del Osciloscopio */
         #oscillo-container {
             width: 100%;
             height: 110px;
@@ -143,7 +138,25 @@
             padding: 5px;
         }
 
-        /* Panel Derecho: Consola y Terminal */
+        /* OPCIÓN C: Display Digital del Multímetro */
+        #multimeter-display {
+            width: 100%;
+            background: rgba(0, 20, 10, 0.9);
+            border: 1px solid var(--neon-green);
+            border-radius: 4px;
+            padding: 8px;
+            margin-top: 8px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+        }
+        #multimeter-value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--neon-green);
+            text-shadow: 0 0 8px var(--neon-green);
+            font-family: monospace;
+        }
+
         #console-panel {
             flex: 1;
             display: flex;
@@ -168,7 +181,6 @@
         .tercero-resp { color: var(--neon-cyan); text-shadow: 0 0 3px var(--neon-glow); }
         .system-alert { color: #ffaa00; font-size: 0.85rem; }
 
-        /* Estilos Cyberpunk para Bloques de Código de Programación/Mecánica */
         .code-block-hud {
             background-color: var(--terminal-code);
             border-left: 3px solid var(--neon-cyan);
@@ -182,7 +194,6 @@
             box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
         }
 
-        /* Controles de Entrada */
         #interaction-deck {
             display: flex;
             gap: 12px;
@@ -233,7 +244,6 @@
             box-shadow: 0 0 10px var(--neon-glow), inset 0 0 5px rgba(0, 242, 254, 0.2);
         }
 
-        /* Keyframes */
         @keyframes rotateCore {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
@@ -259,10 +269,7 @@
             #arc-reactor { width: 100px; height: 100px; }
             #arc-reactor::before { width: 70px; height: 70px; }
             #inner-core { width: 40px; height: 40px; }
-            #oscillo-container { display: none; }
-            #telemetry-panel > div:last-child {
-                flex: 1; display: flex; flex-direction: column; justify-content: center;
-            }
+            #oscillo-container, #multimeter-display { display: none; }
         }
     </style>
 </head>
@@ -281,29 +288,30 @@
                 
                 <div id="hud-telemetry-display" style="font-size: 0.75rem; color: rgba(0, 242, 254, 0.8); line-height: 1.4; font-family: monospace;">
                     CHRONO: <span id="telemetry-clock">00:00:00</span><br>
-                    
                     BATTERY: <span id="telemetry-battery">SCANNING...</span>
                     <div class="telemetry-bar-container">
                         <div id="bar-battery" class="telemetry-bar-fill"></div>
                     </div>
-                    
                     NET LATENCY: <span id="telemetry-ping">0 ms</span>
                     <div class="telemetry-bar-container">
                         <div id="bar-ping" class="telemetry-bar-fill"></div>
                     </div>
-                    
-                    MATRIX HOST: RENDER CLOUD V3
+                    MATRIX HOST: RENDER CLOUD V3.5
                 </div>
 
-                <!-- Gráfico de Telemetría Tipo Osciloscopio -->
                 <div id="oscillo-container">
                     <canvas id="oscillo-canvas"></canvas>
+                </div>
+
+                <div id="multimeter-display">
+                    <div style="font-size: 0.65rem; color: #39ff14; letter-spacing: 1px; margin-bottom: 2px;">V_SIGNAL_MONITOR</div>
+                    <div id="multimeter-value">0.00 V</div>
                 </div>
             </div>
         </div>
 
         <div id="console-panel">
-            <div class="panel-title" style="text-align: left; margin-bottom: 15px;">TERCERO OS ONLINE v3.0 // MAINFRAME HUD</div>
+            <div class="panel-title" style="text-align: left; margin-bottom: 15px;">TERCERO OS ONLINE v3.5 // MAINFRAME HUD</div>
             
             <div id="terminal-display">
                 <div class="log-entry system-alert">> [SISTEMA]: Enlace inicializado. Presione 'AUTORIZAR AUDIO' antes de emitir transmisiones operativas.</div>
@@ -311,10 +319,8 @@
 
             <div id="interaction-deck">
                 <button id="mic-btn" class="hud-btn" onclick="conmutarMicrofono()">🎤 VOCAL</button>
-                
                 <input type="file" id="matrix-file-loader" style="display: none;" onchange="procesarCargaArchivo()">
                 <button class="hud-btn" onclick="document.getElementById('matrix-file-loader').click()">📁 MATRIZ</button>
-                
                 <input type="text" id="command-input" placeholder="Escriba un comando para el sistema o hable..." onkeypress="evaluarRetorno(event)">
                 <button class="hud-btn" onclick="enviarMensajeConsola()">EJECUTAR</button>
             </div>
@@ -330,8 +336,9 @@
         let reconocimientoVoz;
         let controlVozActivo = false;
         let oscilloChart;
+        let currentSensorMode = "BATTERY";
+        let currentSensorStatus = "NORMAL";
 
-        // --- RECONOCIMIENTO VOCAL Y ESCUCHA CONTINUA ---
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             const SpeechEngine = window.SpeechRecognition || window.webkitSpeechRecognition;
             reconocimientoVoz = new SpeechEngine();
@@ -346,26 +353,18 @@
             };
 
             reconocimientoVoz.onerror = (e) => {
-                if(e.error !== 'no-speech') {
-                    logSistema("Fallo en enlace vocal: " + e.error);
-                }
+                if(e.error !== 'no-speech') logSistema("Fallo en enlace vocal: " + e.error);
             };
 
             reconocimientoVoz.onend = () => { 
                 desactivarEstadoMic();
-                // BUCLE MANOS LIBRES: Si sigue activo el flag, re-encendemos el micro automáticamente
-                if (controlVozActivo) {
-                    setTimeout(encenderCapturaVocal, 400);
-                }
+                if (controlVozActivo) setTimeout(encenderCapturaVocal, 400);
             };
 
             reconocimientoVoz.onresult = (e) => {
-                const resultadoText = e.results[0][0].transcript;
-                cmdInput.value = resultadoText;
+                cmdInput.value = e.results[0][0].transcript;
                 enviarMensajeConsola();
             };
-        } else {
-            logSistema("ADVERTENCIA: Captura de micro nativo no soportada.");
         }
 
         function conmutarMicrofono() {
@@ -391,260 +390,12 @@
             micBtn.classList.remove('active-mic');
         }
 
-        // --- SISTEMA INTERPRETE DE TEXTO Y BLOQUES DE CÓDIGO MARKDOWN ---
         function escribirEnTerminal(texto, tipoClase) {
             const entradaLog = document.createElement('div');
             entradaLog.className = `log-entry ${tipoClase}`;
             terminal.appendChild(entradaLog);
             
-            // Analizador Regex para aislar bloques de código encerrados entre triples comillas (```)
-            const regexBloqueCodigo = /```(?:[a-zA-Z]+)?\n([\s\S]*?)```/g;
-            let indicesCodigo = [];
-            let coincidencia;
-            
-            // Almacenamos los bloques de código detectados
-            while ((coincidencia = regexBloqueCodigo.exec(texto)) !== null) {
-                indicesCodigo.push({
-                    inicio: coincidencia.index,
-                    fin: coincidencia.index + coincidencia[0].length,
-                    contenido: coincidencia[1]
-                });
-            }
-            
-            let i = 0;
-            const velocidad = 8; // Renderizado ultra veloz para cadenas largas
-            
-            function teclear() {
-                if (i < texto.length) {
-                    // Validamos si la posición actual cruza un bloque de código
-                    let bloqueEncontrado = indicesCodigo.find(b => i >= b.inicio && i < b.fin);
-                    
-                    if (bloqueEncontrado) {
-                        // Insertamos el bloque estructurado completo de una vez
-                        const preContenedor = document.createElement('pre');
-                        preContenedor.className = 'code-block-hud';
-                        preContenedor.textContent = bloqueEncontrado.contenido.trim();
-                        entradaLog.appendChild(preContenedor);
-                        
-                        i = bloqueEncontrado.fin; // Saltamos el cursor al final del bloque
-                    } else {
-                        // Impresión normal caracter por caracter
-                        entradaLog.innerHTML += texto.charAt(i);
-                        i++;
-                    }
-                    terminal.scrollTop = terminal.scrollHeight;
-                    setTimeout(teclear, velocidad);
-                }
-            }
-            teclear();
-        }
+            const regexBloqueCodigo = /
+http://googleusercontent.com/immersive_entry_chip/0
 
-        // --- EMISIÓN DE AUDIO NÚCLEO (INTEGRADO CON EL MÓDULO VOCAL CONTINUO) ---
-        function emitirAudioNucleo(url) {
-            // Pausamos el micrófono para evitar que capte su propio parlante
-            if (reconocimientoVoz && controlVozActivo) {
-                reconocimientoVoz.stop();
-            }
-
-            const streamingAudio = new Audio(`${url}?t=${new Date().getTime()}`);
-            
-            streamingAudio.onplay = () => { 
-                reactor.classList.add('core-speaking'); 
-                activarOsciloscopio(true);
-            };
-            
-            streamingAudio.onended = () => { 
-                reactor.classList.remove('core-speaking'); 
-                activarOsciloscopio(false);
-                // Reactivamos el bucle de escucha activa si continúa encendido
-                if (controlVozActivo) {
-                    encenderCapturaVocal();
-                }
-            };
-
-            streamingAudio.play().catch(err => {
-                logSistema("Salida de audio restringida. Presione 'AUTORIZAR AUDIO'.");
-                reactor.classList.remove('core-speaking');
-                activarOsciloscopio(false);
-                if (controlVozActivo) encenderCapturaVocal();
-            });
-        }
-
-        // --- OSCILOSCOPIO DE TELEMETRÍA DINÁMICA ---
-        function inicializarOsciloscopio() {
-            const ctx = document.getElementById('oscillo-canvas').getContext('2d');
-            const dataInicial = Array(20).fill(0);
-            
-            oscilloChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: Array(20).fill(''),
-                    datasets: [{
-                        data: dataInicial,
-                        borderColor: '#00f2fe',
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        fill: false,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { display: false },
-                        y: { min: -10, max: 10, display: false }
-                    }
-                }
-            });
-
-            // Actualización cíclica en segundo plano
-            setInterval(() => {
-                let datosActuales = oscilloChart.data.datasets[0].data;
-                datosActuales.shift();
-                
-                // Si Tercero habla o escucha, generamos ondas pronunciadas, si no, ruido eléctrico base
-                let amplitud = reactor.classList.contains('core-speaking') ? 8 : 
-                               reactor.classList.contains('core-listening') ? 5 : 1;
-                
-                let nuevaMuestra = (Math.random() - 0.5) * amplitud;
-                datosActuales.push(nuevaMuestra);
-                oscilloChart.update('none');
-            }, 100);
-        }
-
-        function activarOsciloscopio(activo) {
-            if(!oscilloChart) return;
-            oscilloChart.options.scales.y.max = activo ? 12 : 10;
-            oscilloChart.options.scales.y.min = activo ? -12 : -10;
-        }
-
-        // --- TELEMETRÍA SECUNDARIA (RELOJ, BATERÍA Y PING) ---
-        function actualizarRelojHUD() {
-            const ahora = new Date();
-            const hrs = String(ahora.getHours()).padStart(2, '0');
-            const mins = String(ahora.getMinutes()).padStart(2, '0');
-            const secs = String(ahora.getSeconds()).padStart(2, '0');
-            document.getElementById('telemetry-clock').innerText = `${hrs}:${mins}:${secs}`;
-        }
-        setInterval(actualizarRelojHUD, 1000);
-
-        async function inicializarTelemetriaBateria() {
-            if ('getBattery' in navigator) {
-                try {
-                    const battery = await navigator.getBattery();
-                    const cambiarMetricas = () => {
-                        const nivel = Math.round(battery.level * 100);
-                        const estadoCarga = battery.charging ? " [CHARGING]" : "";
-                        document.getElementById('telemetry-battery').innerText = `${nivel}%${estadoCarga}`;
-                        const fillBar = document.getElementById('bar-battery');
-                        fillBar.style.width = `${nivel}%`;
-                        fillBar.style.backgroundColor = (nivel <= 20 && !battery.charging) ? "#ff0055" : "var(--neon-cyan)";
-                    };
-                    cambiarMetricas();
-                    battery.addEventListener('levelchange', cambiarMetricas);
-                    battery.addEventListener('chargingchange', cambiarMetricas);
-                } catch (e) {
-                    document.getElementById('telemetry-battery').innerText = "OFFLINE";
-                }
-            } else {
-                document.getElementById('telemetry-battery').innerText = "NOT SUPPORTED";
-            }
-        }
-
-        async function calcularLatenciaRed() {
-            const inicio = Date.now();
-            try {
-                await fetch('/chat', { method: 'OPTIONS' }).catch(() => {});
-                const latencia = Date.now() - inicio;
-                document.getElementById('telemetry-ping').innerText = `${latencia} ms`;
-                const fillBar = document.getElementById('bar-ping');
-                fillBar.style.width = `${Math.max(10, Math.min(100, 100 - (latencia / 5)))}%`;
-                fillBar.style.backgroundColor = latencia > 500 ? "#ff0055" : latencia > 250 ? "#ffaa00" : "var(--neon-cyan)";
-            } catch (err) {
-                document.getElementById('telemetry-ping').innerText = "ERR ms";
-                document.getElementById('bar-ping').style.width = '0%';
-            }
-        }
-        setInterval(calcularLatenciaRed, 5000);
-
-        // --- ENVIAR MENSAJES Y TRANSMISIÓN DE DATOS ---
-        async function enviarMensajeConsola() {
-            const msg = cmdInput.value.trim();
-            if (!msg) return;
-
-            cmdInput.value = '';
-            terminal.innerHTML += `<div class="log-entry user-cmd">> Ennio: ${msg}</div>`;
-            irAlFondo();
-
-            try {
-                const respuesta = await fetch('/chat', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({user_id: "Ennio", message: msg})
-                });
-                
-                const datos = await respuesta.json();
-                escribirEnTerminal(`[TERCERO]: ${datos.text}`, 'tercero-resp');
-
-                if (datos.audio_url) {
-                    emitirAudioNucleo(datos.audio_url);
-                }
-            } catch (err) {
-                logSistema("Error crítico en transmisión de paquete.");
-            }
-        }
-
-        async function procesarCargaArchivo() {
-            const cargador = document.getElementById('matrix-file-loader');
-            if (cargador.files.length === 0) return;
-
-            const archivo = cargador.files[0];
-            logSistema(`Inyectando archivo en la matriz: ${archivo.name}...`);
-
-            const formData = new FormData();
-            formData.append("user_id", "Ennio");
-            formData.append("file", archivo);
-
-            try {
-                const respuesta = await fetch('/upload', { method: 'POST', body: formData });
-                const datos = await respuesta.json();
-                
-                logSistema(`Transmisión completa de ${archivo.name}.`);
-                escribirEnTerminal(`[TERCERO]: ${datos.text}`, 'tercero-resp');
-
-                if (datos.audio_url) {
-                    emitirAudioNucleo(datos.audio_url);
-                }
-            } catch (err) {
-                logSistema("Fallo en la carga de archivo binario.");
-            }
-        }
-
-        function sincronizarCanalAudio() {
-            window.AudioContext = window.AudioContext || window.webkitAudioContext;
-            new AudioContext();
-            logSistema("Canal de salida de audio sincronizado.");
-        }
-
-        function logSistema(texto) {
-            terminal.innerHTML += `<div class="log-entry system-alert">> [SISTEMA]: ${texto}</div>`;
-            irAlFondo();
-        }
-
-        function evaluarRetorno(e) {
-            if (e.key === 'Enter') enviarMensajeConsola();
-        }
-
-        function irAlFondo() { terminal.scrollTop = terminal.scrollHeight; }
-
-        // Inicialización de submódulos al cargar el árbol DOM
-        window.onload = () => {
-            inicializarOsciloscopio();
-            inicializarTelemetriaBateria();
-            calcularLatenciaRed();
-        };
-    </script>
-</body>
-</html>
+¡Boom! Ya tienes el sistema blindado a nivel profesional. Prueba abriendo tu HUD y escríbele algo como: *"Tercero, diagnostica una falla en el sensor MAP"*. Verás cómo el texto te da los detalles de ingeniería de una vez y el osciloscopio junto al multímetro digital se vuelven locos simulando la falla en tiempo real. ¡A probarlo! 🦾🤖⚡
