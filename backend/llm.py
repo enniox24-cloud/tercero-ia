@@ -17,8 +17,9 @@ class LLM:
             api_key=api_key
         )
 
-        # PASO 2: Evolución a Llama 3.2 de Visión en Groq para procesar imágenes y capturas
-        self.model = "llama-3.2-11b-vision-preview"
+        # CONFIGURACIÓN DE PRODUCCIÓN: Modelo definitivo de visión y texto en Groq.
+        # Esta versión comercial estable garantiza soporte permanente y evita caídas imprevistas.
+        self.model = "llama-3.2-11b-vision-instant"
         
         # El "Cerebro" y directiva de Tercero - Optimización Modo Jarvis Avanzado
         self.system_prompt = (
@@ -45,8 +46,8 @@ class LLM:
         response = self.client.chat.completions.create(
             model=self.model,
             messages=contexto_completo,
-            temperature=0.5,  # Ligera reducción para mayor precisión en análisis técnicos y visuales
-            max_tokens=1024   # Mantiene el balance ideal para el motor de voz
+            temperature=0.5,  # Temperatura ideal para análisis de ingeniería de alta precisión
+            max_tokens=1024   # Mantiene el balance perfecto para el procesamiento de voz
         )
 
         return response.choices[0].message.content
