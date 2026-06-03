@@ -17,8 +17,8 @@ class LLM:
             api_key=api_key
         )
 
-        # RETORNO A CONFIGURACIÓN ESTABLE: Llama 3.1 8B de texto puro. 
-        # Este modelo está verificado, es ultra rápido en Groq y nunca falla.
+        # CONFIGURACIÓN ESTABLE REVERTIADA: Llama 3.1 8B de texto puro.
+        # Este modelo está activo, verificado en Groq y no genera errores de conexión.
         self.model = "llama-3.1-8b-instant"
         
         # El "Cerebro" y directiva de Tercero - Optimización Modo Jarvis
@@ -42,7 +42,7 @@ class LLM:
         # Mantenemos la estructura limpia asegurando la identidad base de Tercero en el hilo
         contexto_completo = [{"role": "system", "content": self.system_prompt}] + messages
         
-        response = self.client.chat.completions.create(
+        response = self.client.client.chat.completions.create(
             model=self.model,
             messages=contexto_completo,
             temperature=0.6,  # Temperatura balanceada para respuestas precisas y naturales
