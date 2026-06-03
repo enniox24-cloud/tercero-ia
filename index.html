@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Tercero OS</title>
+    <style>
+        body { background: #060913; color: #00f2fe; font-family: sans-serif; display: flex; height: 100vh; margin: 0; }
+        #chat-window { flex: 1; border-right: 1px solid #14223d; padding: 20px; }
+        #telemetry { width: 300px; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div id="chat-window">
+        <h1>TERCERO OS ONLINE</h1>
+        <input type="text" id="msg" placeholder="Enviar comando...">
+        <button onclick="enviar()">EJECUTAR</button>
+        <div id="resp"></div>
+    </div>
+    <div id="telemetry">
+        <h3>STATUS: <span id="status">CONECTADO</span></h3>
+    </div>
+    <script>
+        async function enviar() {
+            const m = document.getElementById('msg').value;
+            const res = await fetch('/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: "Ennio", message: m})
+            });
+            const data = await res.json();
+            document.getElementById('resp').innerText = data.text;
+        }
+    </script>
+</body>
+</html>
