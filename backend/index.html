@@ -3,65 +3,666 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tercero OS | Mainframe Cognitivo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <title>Tercero OS - Mainframe Cognitivo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-main: #060913; --primary: #00f2fe; --neon-green: #39ff14; 
-            --neon-orange: #ff9900; --text: #e0e6ed;
+            --bg-main: #060913;
+            --bg-sidebar: #0b1120;
+            --primary-ui: #00f2fe;
+            --secondary-ui: #4facfe;
+            --text-main: #e0e6ed;
+            --text-muted: #8892b0;
+            --user-bubble: #1a2a4a;
+            --ai-bubble: #0f172a;
+            --glow: 0 0 15px rgba(0, 242, 254, 0.6);
+            --neon-green: #39ff14;
+            --neon-orange: #ff9900;
         }
-        body { font-family: 'Share Tech Mono', monospace; background: var(--bg-main); color: var(--text); height: 100vh; display: flex; overflow: hidden; }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        #sidebar {
+            width: 260px;
+            background-color: var(--bg-sidebar);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            border-right: 1px solid #14223d;
+            transition: all 0.3s ease;
+        }
+
+        #brand {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            color: var(--primary-ui);
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: var(--glow);
+            letter-spacing: 2px;
+        }
+
+        .new-chat-btn {
+            background: linear-gradient(45deg, var(--secondary-ui), var(--primary-ui));
+            color: #000;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .new-chat-btn:hover { 
+            transform: scale(1.03);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.4);
+        }
+
+        #chats-list { flex: 1; overflow-y: auto; }
+        .chat-item {
+            padding: 12px 10px;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 14px;
+            border-left: 2px solid transparent;
+            margin-bottom: 4px;
+        }
+        .chat-item:hover, .chat-item.active { 
+            background-color: #14223d; 
+            color: var(--primary-ui);
+            border-left-color: var(--primary-ui);
+        }
+
+        #main-chat { flex: 1; display: flex; flex-direction: column; position: relative; }
         
-        /* Sidebar y Estructura */
-        #sidebar { width: 260px; background: #0b1120; border-right: 1px solid #14223d; display: flex; flex-direction: column; padding: 20px; }
-        #brand { font-family: 'Orbitron', sans-serif; color: var(--primary); text-align: center; margin-bottom: 30px; letter-spacing: 2px; text-shadow: 0 0 10px var(--primary); }
-        
-        /* HUD Central */
-        #main-chat { flex: 1; display: flex; flex-direction: column; }
-        #hud-top-bar { padding: 20px; display: flex; justify-content: center; border-bottom: 1px solid #14223d; }
-        #hud-core { width: 60px; height: 60px; border: 2px solid var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s; }
-        
-        /* Chat y Telemetría */
-        #workspace { flex: 1; display: flex; overflow: hidden; }
-        #chat-window { flex: 1; padding: 20px; overflow-y: auto; }
-        #hud-telemetry { width: 300px; background: #0b1120; padding: 20px; border-left: 1px solid #14223d; }
-        
-        /* Consola */
-        #serial-console { height: 200px; background: #000; border: 1px solid var(--primary); color: var(--neon-green); padding: 10px; font-size: 12px; overflow-y: auto; }
+        /* CONTENEDOR CENTRAL DEL CORE ANIMADO HUD */
+        #hud-top-bar {
+            background-color: rgba(11, 17, 32, 0.8);
+            border-bottom: 1px solid #14223d;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        #hud-core {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 3px dashed var(--primary-ui);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--glow);
+            animation: rotateCore 10s linear infinite;
+            transition: all 0.4s ease;
+        }
+
+        #hud-core-inner {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background-color: rgba(0, 242, 254, 0.1);
+            border: 2px solid var(--primary-ui);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            color: var(--primary-ui);
+            animation: pulseCore 2s ease-in-out infinite alternate;
+        }
+
+        /* ESTADOS DEL CORE ANIMADO */
+        #hud-core.procesando {
+            border-color: var(--neon-orange);
+            box-shadow: 0 0 15px rgba(255, 153, 0, 0.6);
+            animation-duration: 2s;
+        }
+        #hud-core.procesando #hud-core-inner {
+            background-color: rgba(255, 153, 0, 0.1);
+            border-color: var(--neon-orange);
+            color: var(--neon-orange);
+        }
+
+        #hud-core.hablando {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.7);
+            animation-duration: 4s;
+        }
+        #hud-core.hablando #hud-core-inner {
+            background-color: rgba(57, 255, 20, 0.1);
+            border-color: var(--neon-green);
+            color: var(--neon-green);
+        }
+
+        /* DISPOSICIÓN PRINCIPAL DE PANTALLA DIVIDIDA */
+        #workspace {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        #chat-window { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+
+        /* PANEL DERECHO DE TELEMETRÍA MECATRÓNICA */
+        #hud-telemetry {
+            width: 280px;
+            background-color: var(--bg-sidebar);
+            border-left: 1px solid #14223d;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .telemetry-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            color: var(--primary-ui);
+            letter-spacing: 1px;
+            border-bottom: 1px solid #14223d;
+            padding-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .metric-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .metric-labels {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background-color: #0c1222;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #1e2d4a;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--secondary-ui), var(--primary-ui));
+            box-shadow: 0 0 8px var(--primary-ui);
+            transition: width 0.5s ease;
+        }
+
+        /* CONSOLA DE LOGS SERIALES NEÓN */
+        #serial-console {
+            flex: 1;
+            background-color: #04070d;
+            border: 1px solid #14223d;
+            border-radius: 6px;
+            padding: 12px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 11px;
+            color: var(--neon-green);
+            overflow-y: auto;
+            white-space: pre-wrap;
+            line-height: 1.4;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
+
+        /* CONFIGURACIÓN DE MENSAJES Y BURBUJAS */
+        .message { max-width: 75%; display: flex; gap: 10px; animation: fadeIn 0.3s ease; }
+        .message.user { align-self: flex-end; flex-direction: row-reverse; }
+        .message.ai { align-self: flex-start; }
+
+        .avatar { width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Orbitron', sans-serif; font-weight: bold; font-size: 13px; }
+        .user .avatar { background-color: var(--user-bubble); color: var(--primary-ui); border: 1px solid var(--primary-ui); }
+        .ai .avatar { background-color: var(--bg-sidebar); border: 1px solid var(--primary-ui); color: var(--primary-ui); text-shadow: var(--glow); }
+
+        .bubble { padding: 15px 20px; border-radius: 12px; line-height: 1.6; font-size: 14.5px; }
+        .user .bubble { background-color: var(--user-bubble); border-radius: 12px 12px 0 12px; color: #fff; }
+        .ai .bubble { background-color: var(--ai-bubble); border-radius: 12px 12px 12px 0; border: 1px solid #14223d; }
+
+        .chat-image { max-width: 100%; border-radius: 8px; margin-top: 10px; border: 2px solid #1a2a4a; cursor: pointer; }
+        .generated-art { max-width: 400px; border: 2px solid var(--primary-ui); box-shadow: var(--glow); }
+
+        .pdf-download-link {
+            display: inline-flex; align-items: center; gap: 10px; background-color: #1a2a4a; color: var(--primary-ui);
+            text-decoration: none; padding: 10px 15px; border-radius: 5px; margin-top: 10px; font-size: 14px; border: 1px solid var(--primary-ui);
+        }
+        .pdf-download-link:hover { background-color: #243b6a; }
+
+        #input-area { padding: 20px 30px; position: relative; background-color: rgba(6, 9, 19, 0.9); }
+        #file-preview-bar {
+            background-color: var(--bg-sidebar); border: 1px solid #14223d; border-radius: 10px 10px 0 0;
+            padding: 10px 15px; display: none; align-items: center; gap: 10px; margin-bottom: -1px;
+        }
+        #file-preview-bar img { height: 40px; border-radius: 4px; }
+        #file-preview-bar .file-info { flex: 1; font-size: 12px; color: var(--text-muted); }
+        #file-preview-bar .remove-file { color: #ff4444; cursor: pointer; font-weight: bold; }
+
+        #input-container { background-color: var(--bg-sidebar); border: 1px solid #14223d; border-radius: 10px; display: flex; align-items: center; padding: 5px 15px; gap: 10px; transition: border-color 0.3s; }
+        #input-container:focus-within { border-color: var(--primary-ui); box-shadow: 0 0 10px rgba(0,242,254,0.15); }
+        #user-id-display { font-family: 'Orbitron', sans-serif; font-size: 12px; color: var(--primary-ui); border-right: 1px solid #14223d; padding-right: 10px; letter-spacing: 1px; }
+
+        input[type="file"] { display: none; }
+        .icon-btn { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; padding: 10px; transition: color 0.2s; }
+        .icon-btn:hover, .icon-btn.active { color: var(--primary-ui); }
+        #text-input { flex: 1; background: none; border: none; color: var(--text-main); padding: 15px 0; font-size: 15px; }
+        #send-btn { background-color: var(--primary-ui); color: #000; border: none; width: 45px; height: 45px; border-radius: 50%; font-weight: bold; cursor: pointer; font-size: 18px; box-shadow: 0 0 8px rgba(0,242,254,0.3); }
+
+        /* ANIMACIONES */
+        @keyframes rotateCore { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes pulseCore { from { transform: scale(0.95); opacity: 0.8; } to { transform: scale(1.05); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
+
     <div id="sidebar">
         <div id="brand">TERCERO OS</div>
-        <button onclick="iniciarNuevoChat()">+ NUEVO VECTOR</button>
+        <button class="new-chat-btn" onclick="iniciarNuevoChat()">+ Nuevo Chat</button>
         <div id="chats-list"></div>
     </div>
-    
+
     <div id="main-chat">
-        <div id="hud-top-bar"><div id="hud-core">SYS</div></div>
+        <div id="hud-top-bar">
+            <div id="hud-core">
+                <div id="hud-core-inner">SYS_ON</div>
+            </div>
+        </div>
+
         <div id="workspace">
             <div id="chat-window"></div>
+
             <div id="hud-telemetry">
-                <h3>TELEMETRÍA</h3>
-                <div id="cpu-bar" style="background: var(--primary); height: 10px; width: 0%;"></div>
-                <div id="serial-console">INICIALIZANDO...</div>
+                <div class="metric-group">
+                    <div class="telemetry-title">Telemetría PC</div>
+                    <div class="metric-labels">
+                        <span>NÚCLEO CPU</span>
+                        <span id="cpu-value">0%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div id="cpu-bar" class="progress-bar-fill"></div>
+                    </div>
+                </div>
+
+                <div class="metric-group">
+                    <div class="metric-labels">
+                        <span>MEMORIA RAM</span>
+                        <span id="ram-value">0%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div id="ram-bar" class="progress-bar-fill"></div>
+                    </div>
+                </div>
+
+                <div class="metric-group" style="flex: 1; display: flex; flex-direction: column;">
+                    <div class="telemetry-title">Logs de Automatización</div>
+                    <div id="serial-console">Iniciando escaneo de ráfagas seriales...</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="input-area">
+            <div id="file-preview-bar">
+                <img id="p-img-preview" src="" alt="" style="display:none;">
+                <div id="p-file-icon" style="font-size:30px; display:none;">📄</div>
+                <div class="file-info">
+                    <span id="p-file-name">nombre.archivo</span>
+                    <span id="p-file-size" style="opacity:0.6;">(0 KB)</span>
+                </div>
+                <span class="remove-file" onclick="cancelarArchivo()">×</span>
+            </div>
+            <div id="input-container">
+                <div id="user-id-display">ENNIO</div>
+                <input type="file" id="file-input" onchange="previsualizarArchivo()">
+                <button class="icon-btn" title="Subir Imagen o PDF" onclick="document.getElementById('file-input').click()">➕</button>
+                <button class="icon-btn" id="mic-btn" title="Hablar" onclick="toggleMicrofono()">🎤</button>
+                <input type="text" id="text-input" placeholder="Ordene o envíe planos, señor..." onkeypress="manejarEnter(event)">
+                <button id="send-btn" onclick="enviarMensaje()">➤</button>
             </div>
         </div>
     </div>
 
     <script>
-        // LÓGICA CORE (PENDIENTE DE CONEXIÓN)
-        const APP_STATE = {
-            usuario: "Ennio",
-            estado: "IDLE"
+        let USER_ID = "Ennio_Op";
+        let CURRENT_CHAT_ID = "chat_inicial";
+        let local_chats = {};
+        let archivo_pendiente = null;
+
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let estaGrabando = false;
+        let audioActual = null;
+
+        window.onload = async () => {
+            local_chats = JSON.parse(localStorage.getItem(`chats_${USER_ID}`)) || {};
+            if(!local_chats[CURRENT_CHAT_ID]) {
+                local_chats[CURRENT_CHAT_ID] = { titulo: "Conversación Nueva", mensajes: [] };
+            }
+            actualizarListaChatsSideBar();
+            cargarChatSeleccionado();
+            
+            // INICIAR LOOP DE TELEMETRÍA AUTOMÁTICA (Cada 1 segundo)
+            setInterval(actualizarTelemetriaHUD, 1000);
         };
 
-        function iniciarNuevoChat() { console.log("Iniciando nuevo proceso..."); }
-        
-        // ESTA ES LA ESTRUCTURA QUE MEJORAREMOS PARA TU IA
-        function actualizarInterfaz() {
-            // Aquí centralizaremos las actualizaciones de la pantalla
+        // LOOP DE RECOGIDA DE DATOS REALES DE PC Y SERIAL
+        async function actualizarTelemetriaHUD() {
+            try {
+                const res = await fetch('/api/telemetria');
+                const data = await res.json();
+                
+                // Actualizar Barras de Progreso Visuales
+                document.getElementById('cpu-value').innerText = `${Math.round(data.cpu)}%`;
+                document.getElementById('cpu-bar').style.width = `${data.cpu}%`;
+                
+                document.getElementById('ram-value').innerText = `${Math.round(data.ram)}%`;
+                document.getElementById('ram-bar').style.width = `${data.ram}%`;
+                
+                // Actualizar Consola de Logs Seriales
+                if (data.serial_log) {
+                    const consoleElement = document.getElementById('serial-console');
+                    if (!consoleElement.innerText.includes(data.serial_log)) {
+                        consoleElement.innerHTML += `\n[${new Date().toLocaleTimeString()}] ${data.serial_log}`;
+                        consoleElement.scrollTop = consoleElement.scrollHeight;
+                    }
+                }
+            } catch (err) {
+                console.log("Falla de sincronización con el endpoint de telemetría.");
+            }
         }
+
+        // CONTROL DINÁMICO DE ESTADOS DEL ANILLO HOLOGRÁFICO CENTRAL
+        function cambiarEstadoCore(estado) {
+            const core = document.getElementById('hud-core');
+            const inner = document.getElementById('hud-core-inner');
+            core.className = ""; // Limpiar clases previas
+            
+            if (estado === 'procesando') {
+                core.classList.add('procesando');
+                inner.innerText = "PRCZ_OS";
+            } else if (estado === 'hablando') {
+                core.classList.add('hablando');
+                inner.innerText = "VOZ_OUT";
+            } else {
+                inner.innerText = "SYS_ON";
+            }
+        }
+
+        function reproducirVozNativa(audioFile) {
+            if (!audioFile) return;
+            if (audioActual) {
+                audioActual.pause();
+                audioActual.currentTime = 0;
+            }
+            audioActual = new Audio(`/static/audio/${audioFile}`);
+            
+            // Reaccionar visualmente cuando empiece y termine la voz de la IA
+            audioActual.onplay = () => cambiarEstadoCore('hablando');
+            audioActual.onended = () => cambiarEstadoCore('estable');
+            
+            audioActual.play().catch(err => {
+                console.log("Interacción requerida para reproducción de voz:", err);
+                cambiarEstadoCore('estable');
+            });
+        }
+
+        function actualizarListaChatsSideBar() {
+            const list = document.getElementById('chats-list');
+            list.innerHTML = "";
+            Object.keys(local_chats).forEach(id => {
+                const item = document.createElement('div');
+                item.className = `chat-item ${id === CURRENT_CHAT_ID ? 'active' : ''}`;
+                item.innerText = local_chats[id].titulo;
+                item.onclick = () => seleccionarChat(id);
+                list.appendChild(item);
+            });
+        }
+
+        function seleccionarChat(id) {
+            CURRENT_CHAT_ID = id;
+            actualizarListaChatsSideBar();
+            cargarChatSeleccionado();
+        }
+
+        function iniciarNuevoChat() {
+            const nuevo_id = "chat_" + Date.now();
+            local_chats[nuevo_id] = { titulo: "Nuevo Vector de Datos", mensajes: [] };
+            guardarMemoriaLocal();
+            seleccionarChat(nuevo_id);
+        }
+
+        function guardarMemoriaLocal() { localStorage.setItem(`chats_${USER_ID}`, JSON.stringify(local_chats)); }
+
+        function cargarChatSeleccionado() {
+            const windowChat = document.getElementById('chat-window');
+            windowChat.innerHTML = "";
+            local_chats[CURRENT_CHAT_ID].mensajes.forEach(msg => {
+                crearBurbuja(msg.role, msg.content, msg.multimedia);
+            });
+            windowChat.scrollTop = windowChat.scrollHeight;
+        }
+
+        function previsualizarArchivo() {
+            const file = document.getElementById('file-input').files[0];
+            if (!file) return;
+            archivo_pendiente = file;
+            const bar = document.getElementById('file-preview-bar');
+            const imgP = document.getElementById('p-img-preview');
+            const iconP = document.getElementById('p-file-icon');
+
+            document.getElementById('p-file-name').innerText = file.name;
+            document.getElementById('p-file-size').innerText = `(${(file.size/1024).toFixed(1)} KB)`;
+            bar.style.display = 'flex';
+
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = e => { imgP.src = e.target.result; imgP.style.display = 'block'; };
+                reader.readAsDataURL(file);
+                iconP.style.display = 'none';
+            } else {
+                imgP.style.display = 'none';
+                iconP.style.display = 'block';
+            }
+        }
+
+        function cancelarArchivo() {
+            archivo_pendiente = null;
+            document.getElementById('file-input').value = "";
+            document.getElementById('file-preview-bar').style.display = 'none';
+        }
+
+        function crearBurbuja(role, texto, multimedia = null) {
+            const windowChat = document.getElementById('chat-window');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${role === 'user' ? 'user' : 'ai'}`;
+
+            const avatar = `<div class="avatar">${role === 'user' ? 'E' : 'T'}</div>`;
+            let bubbleContent = `<div class="bubble">${texto}`;
+
+            if (multimedia) {
+                if (multimedia.tipo === 'user_uploaded_image') {
+                    bubbleContent += `<br><img src="${multimedia.url}" class="chat-image" onclick="window.open('${multimedia.url}', '_blank')">`;
+                } else if (multimedia.tipo === 'ai_generated_art') {
+                    bubbleContent += `<br><img src="${multimedia.url}" class="chat-image generated-art" onclick="window.open('${multimedia.url}', '_blank')">`;
+                } else if (multimedia.tipo === 'downloadable_pdf') {
+                    bubbleContent += `<br><a href="/download/${multimedia.filename}" class="pdf-download-link">📄 Descargar Reporte: ${multimedia.filename}</a>`;
+                }
+            }
+
+            bubbleContent += `</div>`;
+            msgDiv.innerHTML = avatar + bubbleContent;
+            windowChat.appendChild(msgDiv);
+            windowChat.scrollTop = windowChat.scrollHeight;
+        }
+
+        async function enviarMensaje() {
+            const input = document.getElementById('text-input');
+            const chatBox = document.getElementById('chat-window');
+            
+            const mensaje = input.value.trim();
+            if(!mensaje && !archivo_pendiente) return;
+
+            input.value = "";
+            let multimedia_data = null;
+            let actual_api_route = '/chat';
+            const formData = new FormData();
+            formData.append('user_id', USER_ID);
+            formData.append('chat_id', CURRENT_CHAT_ID);
+
+            if (archivo_pendiente) {
+                formData.append('file', archivo_pendiente);
+                formData.append('message', mensaje ? mensaje : "Analiza esta imagen.");
+                actual_api_route = '/chat-file';
+                
+                if (archivo_pendiente.type.startsWith('image/')) {
+                    const base64Img = document.getElementById('p-img-preview').src;
+                    multimedia_data = { tipo: 'user_uploaded_image', url: base64Img };
+                }
+                cancelarArchivo();
+            }
+
+            const texto_burbuja = mensaje ? mensaje : (multimedia_data ? "📸 [Imagen Adjunta]" : "📄 [Documento Adjunto]");
+
+            local_chats[CURRENT_CHAT_ID].mensajes.push({ role: 'user', content: texto_burbuja, multimedia: multimedia_data });
+            crearBurbuja('user', texto_burbuja, multimedia_data);
+            guardarMemoriaLocal();
+
+            // Core a modo procesando
+            cambiarEstadoCore('procesando');
+
+            const thinking = document.createElement('div'); 
+            thinking.id = 'thinking'; 
+            thinking.innerText = 'Tercero procesando matriz...'; 
+            thinking.style.color = '#8892b0'; 
+            thinking.style.paddingLeft = '55px'; 
+            chatBox.appendChild(thinking);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const response = await fetch(actual_api_route, {
+                    method: 'POST',
+                    body: actual_api_route === '/chat-file' ? formData : JSON.stringify({user_id:USER_ID, chat_id:CURRENT_CHAT_ID, message:mensaje}),
+                    headers: actual_api_route === '/chat' ? {'Content-Type': 'application/json'} : {}
+                });
+                
+                const data = await response.json();
+                if(document.getElementById('thinking')) document.getElementById('thinking').remove();
+
+                let ai_multimedia = null;
+                if (data.generated_image) {
+                    ai_multimedia = { tipo: 'ai_generated_art', url: data.generated_image };
+                } else if (data.download_pdf) {
+                    ai_multimedia = { tipo: 'downloadable_pdf', filename: data.download_pdf };
+                }
+
+                const respuestaTexto = data.text || data.response || "Matriz procesada.";
+
+                local_chats[CURRENT_CHAT_ID].mensajes.push({ role: 'assistant', content: respuestaTexto, multimedia: ai_multimedia });
+                crearBurbuja('ai', respuestaTexto, ai_multimedia);
+                guardarMemoriaLocal();
+
+                if (data.audio_file) {
+                    reproducirVozNativa(data.audio_file);
+                } else {
+                    cambiarEstadoCore('estable');
+                }
+
+            } catch (error) {
+                console.error(error);
+                if(document.getElementById('thinking')) document.getElementById('thinking').remove();
+                crearBurbuja('ai', "Error en el enlace de datos, señor. Matriz inestable.");
+                cambiarEstadoCore('estable');
+            }
+        }
+
+        async function toggleMicrofono() {
+            const btn = document.getElementById('mic-btn');
+            
+            if(!estaGrabando) {
+                audioChunks = [];
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                    mediaRecorder.onstop = enviarAudioAlBackend;
+                    
+                    mediaRecorder.start(); 
+                    estaGrabando = true;
+                    btn.innerText = "🛑"; 
+                    btn.classList.add('active');
+                    cambiarEstadoCore('procesando'); // Anillo reacciona al escuchar
+                } catch (err) {
+                    console.error("Permiso de micrófono denegado:", err);
+                    alert("No se pudo acceder al micrófono. Verifique los permisos.");
+                }
+            } else {
+                if(mediaRecorder) {
+                    mediaRecorder.stop();
+                    mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                }
+                estaGrabando = false;
+                btn.innerText = "🎤"; 
+                btn.classList.remove('active');
+            }
+        }
+
+        async function enviarAudioAlBackend() {
+            const btn = document.getElementById('mic-btn');
+            btn.innerText = "⏳";
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            const formData = new FormData();
+            formData.append('user_id', USER_ID);
+            formData.append('chat_id', CURRENT_CHAT_ID);
+            formData.append('file', audioBlob, 'grabacion.wav');
+
+            try {
+                const response = await fetch('/chat-audio', { method: 'POST', body: formData });
+                const data = await response.json();
+                btn.innerText = "🎤";
+
+                const textoUsuario = data.user_text || "[Audio Procesado]";
+                const textoAsistente = data.text || data.response || "Comando recibido.";
+
+                local_chats[CURRENT_CHAT_ID].mensajes.push({ role:'user', content: textoUsuario });
+                crearBurbuja('user', textoUsuario);
+                
+                local_chats[CURRENT_CHAT_ID].mensajes.push({ role:'assistant', content: textoAsistente });
+                crearBurbuja('ai', textoAsistente);
+                guardarMemoriaLocal();
+                
+                if (data.audio_file) {
+                    reproducirVozNativa(data.audio_file);
+                } else {
+                    cambiarEstadoCore('estable');
+                }
+            } catch(e) { 
+                console.error(e); 
+                btn.innerText = "🎤"; 
+                cambiarEstadoCore('estable');
+            }
+        }
+
+        function manejarEnter(e) { if(e.key === 'Enter') enviarMensaje(); }
     </script>
 </body>
 </html>
