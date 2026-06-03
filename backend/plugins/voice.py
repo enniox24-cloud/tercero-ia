@@ -13,14 +13,19 @@ class VoicePlugin:
 
     def texto_a_voz(self, texto: str, filename: str = None) -> str:
         """
-        Convierte texto a MP3 de forma segura. Si no se provee filename, genera uno con timestamp.
+        Convierte texto a MP3 de forma segura eliminando el formato Markdown.
+        Si no se provee filename, genera uno con timestamp.
         """
         try:
             if not filename:
                 filename = f"response_{int(time.time())}.mp3"
             
-            # Limpieza para voz más natural usando la librería 're' correctamente importada
-            texto_limpio = re.sub(r'[^\w\s.,!?¡¿]', '', texto)
+            # 1. Filtro avanzado para remover sintaxis Markdown antes de procesar la voz
+            # Quita asteriscos de negritas/itálicas, bloques de código, hashtags de títulos y guiones de listas
+            texto_sin_markdown = re.sub(r'\*\*|__|\*|_|`|#+\s|^\s*-\s', '', texto, flags=re.MULTILINE)
+            
+            # 2. Limpieza final para mantener únicamente caracteres legibles y puntuación fluida
+            texto_limpio = re.sub(r'[^\w\s.,!?¡¿]', '', texto_sin_markdown)
             
             # Inicializamos gTTS configurado en español nativo fluido
             tts = gTTS(text=texto_limpio, lang="es", slow=False)
@@ -35,11 +40,23 @@ class VoicePlugin:
             return ""
 
     def limpiar_audio_antiguo(self):
-        """Borra audios antiguos para evitar que el almacenamiento efímero de Render se sature."""
+        """
+        Borra audios antiguos de forma segura, protegiendo los archivos emitidos 
+        recientemente (últimos 30 segundos) para evitar bloqueos o cortes de streaming en Render.
+        """
         try:
+            ahora = time.time()
             for f in os.listdir(self.audio_dir):
                 file_path = os.path.join(self.audio_dir, f)
                 if os.path.isfile(file_path):
-                    os.remove(file_path)
+                    # Obtenemos la última fecha de modificación del archivo
+                    tiempo_modificacion = os.path.getmtime(file_path)
+                    # Si el archivo tiene más de 30 segundos de vida, se elimina de forma segura
+                    if (ahora - tiempo_modificacion) > 30:
+                        try:
+                            os.remove(file_path)
+                        except PermissionError:
+                            # Si el servidor aún lo está sirviendo, ignora temporalmente para no tumbar la app
+                            pass
         except Exception as e:
             print(f"[ERROR CLEANUP]: No se pudo realizar la purga de audios: {str(e)}")
