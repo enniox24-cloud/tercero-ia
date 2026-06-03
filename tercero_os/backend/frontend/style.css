@@ -1,14 +1,39 @@
-body{
-background:#111;
-color:white;
-font-family:Arial;
-padding:20px;
+/* ==========================================
+   CONFIGURACIÓN PARA TELÉFONOS (Pantallas de menos de 768px)
+   ========================================== */
+@media (max-width: 768px) {
+    body {
+        font-size: 14px; /* Achica un poco la letra general */
+        padding: 10px;   /* Reduce los márgenes para ganar espacio */
+    }
+
+    /* Si tienes un contenedor principal en Grid o Flexbox, lo volvemos vertical */
+    .contenedor-principal {
+        display: flex;
+        flex-direction: column; /* Apila los paneles uno abajo del otro */
+        width: 100%;
+        height: auto;
+    }
+
+    /* Ajustamos el tamaño del chat o la matriz para que no se desborde */
+    .panel-chat {
+        width: 100%;
+        max-height: 400px; /* Evita que ocupe toda la pantalla vertical */
+    }
+
+    /* Achicamos botones gigantes */
+    button {
+        padding: 10px 15px;
+        font-size: 14px;
+    }
 }
 
-#chat{
-height:400px;
-overflow:auto;
-border:1px solid #333;
-padding:10px;
-margin-bottom:10px;
+/* ==========================================
+   CONFIGURACIÓN PARA TABLETS / IPADS (Pantallas entre 769px y 1024px)
+   ========================================== */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .contenedor-principal {
+        display: grid;
+        grid-template-columns: 1fr; /* Adapta el espacio del iPad */
+    }
 }
