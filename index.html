@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TERCERO OS | MAINFRAME V4.0</title>
-    <!-- Cargamos Chart.js para el Osciloscopio de Telemetría -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -16,473 +15,139 @@
             --neon-green: #39ff14;
             --alert-red: #ff0055;
         }
-
         * { box-sizing: border-box; }
-
         body {
             background-color: var(--dark-space);
             color: var(--neon-cyan);
             font-family: 'Courier New', Courier, monospace;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
+            margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden;
         }
-
         #mainframe-container {
-            display: flex;
-            width: 100%;
-            height: 100%;
-            border: 2px solid var(--neon-cyan);
+            display: flex; width: 100%; height: 100%; border: 2px solid var(--neon-cyan);
             box-shadow: 0 0 20px var(--neon-glow), inset 0 0 20px var(--neon-glow);
-            margin: 10px;
-            background: linear-gradient(180deg, var(--dark-space) 0%, #051026 100%);
+            margin: 10px; background: linear-gradient(180deg, var(--dark-space) 0%, #051026 100%);
         }
-
-        /* Panel Izquierdo: Telemetría y Núcleo */
         #telemetry-panel {
-            width: 350px;
-            border-right: 2px solid var(--neon-cyan);
-            background: var(--panel-bg);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            justify-content: space-between;
-            transition: all 0.3s ease;
-            overflow-y: auto;
+            width: 350px; border-right: 2px solid var(--neon-cyan); background: var(--panel-bg);
+            display: flex; flex-direction: column; align-items: center; padding: 20px;
+            justify-content: space-between; overflow-y: auto;
         }
-
         .panel-title {
-            font-size: 1.1rem;
-            font-weight: bold;
-            letter-spacing: 2px;
-            text-align: center;
-            border-bottom: 1px solid var(--neon-cyan);
-            width: 100%;
-            padding-bottom: 10px;
-            text-shadow: 0 0 8px var(--neon-cyan);
-            margin-bottom: 10px;
+            font-size: 1.1rem; font-weight: bold; letter-spacing: 2px; text-align: center;
+            border-bottom: 1px solid var(--neon-cyan); width: 100%; padding-bottom: 10px;
+            text-shadow: 0 0 8px var(--neon-cyan); margin-bottom: 10px;
         }
-
-        /* Núcleo Central de Animación - Estilo Jarvis */
         #arc-reactor {
-            width: 150px;
-            height: 150px;
-            border: 6px double var(--neon-cyan);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            box-shadow: 0 0 15px var(--neon-cyan);
-            transition: all 0.3s ease;
-            margin-bottom: 10px;
-            cursor: pointer;
+            width: 150px; height: 150px; border: 6px double var(--neon-cyan); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; position: relative;
+            box-shadow: 0 0 15px var(--neon-cyan); margin-bottom: 10px; cursor: pointer;
         }
-
         #arc-reactor::before {
-            content: '';
-            position: absolute;
-            width: 110px;
-            height: 110px;
-            border: 2px dashed var(--neon-cyan);
-            border-radius: 50%;
-            animation: rotateCore 12s linear infinite;
+            content: ''; position: absolute; width: 110px; height: 110px;
+            border: 2px dashed var(--neon-cyan); border-radius: 50%; animation: rotateCore 12s linear infinite;
         }
-
-        #inner-core {
-            width: 55px;
-            height: 55px;
-            background-color: var(--neon-cyan);
-            border-radius: 50%;
-            box-shadow: 0 0 25px var(--neon-cyan);
-            transition: transform 0.2s ease;
-        }
-
-        /* Animación Activa de Voz */
-        .core-speaking {
-            animation: corePulse 1.2s ease-in-out infinite alternate !important;
-        }
-
-        .core-listening {
-            border-color: var(--alert-red) !important;
-            box-shadow: 0 0 25px var(--alert-red) !important;
-        }
-        .core-listening #inner-core {
-            background-color: var(--alert-red) !important;
-            box-shadow: 0 0 30px var(--alert-red) !important;
-        }
-
-        /* BARRAS DE TELEMETRÍA DE NEÓN */
-        .telemetry-bar-container {
-            width: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(0, 242, 254, 0.3);
-            height: 12px;
-            margin: 5px 0 12px 0;
-            border-radius: 3px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .telemetry-bar-fill {
-            height: 100%;
-            width: 0%;
-            background: var(--neon-cyan);
-            box-shadow: 0 0 8px var(--neon-cyan);
-            transition: width 0.5s ease, background-color 0.5s ease;
-        }
-
-        /* Contenedor del Osciloscopio */
-        #oscillo-container {
-            width: 100%;
-            height: 110px;
-            margin-top: 10px;
-            background: rgba(0, 5, 15, 0.6);
-            border: 1px solid rgba(0, 242, 254, 0.2);
-            border-radius: 4px;
-            padding: 5px;
-        }
-
-        /* Display Digital de Multímetro Neón */
-        #multimeter-display {
-            width: 100%;
-            background: rgba(0, 20, 10, 0.9);
-            border: 1px solid var(--neon-green);
-            border-radius: 4px;
-            padding: 8px;
-            margin-top: 8px;
-            text-align: center;
-            box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
-        }
-        #multimeter-value {
-            font-size: 1.4rem;
-            font-weight: bold;
-            color: var(--neon-green);
-            text-shadow: 0 0 8px var(--neon-green);
-            font-family: monospace;
-        }
-
-        /* Panel Derecho: Consola y Terminal */
-        #console-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-            background: rgba(2, 4, 10, 0.85);
-            overflow: hidden;
-        }
-
-        #terminal-display {
-            flex: 1;
-            border: 1px solid rgba(0, 242, 254, 0.3);
-            background: rgba(0, 0, 0, 0.6);
-            padding: 20px;
-            overflow-y: auto;
-            margin-bottom: 20px;
-            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.9);
-        }
-
+        #inner-core { width: 55px; height: 55px; background-color: var(--neon-cyan); border-radius: 50%; box-shadow: 0 0 25px var(--neon-cyan); }
+        .core-speaking { animation: corePulse 1.2s ease-in-out infinite alternate !important; }
+        .core-listening { border-color: var(--alert-red) !important; box-shadow: 0 0 25px var(--alert-red) !important; }
+        .core-listening #inner-core { background-color: var(--alert-red) !important; box-shadow: 0 0 30px var(--alert-red) !important; }
+        .telemetry-bar-container { width: 100%; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(0, 242, 254, 0.3); height: 12px; margin: 5px 0 12px 0; border-radius: 3px; overflow: hidden; }
+        .telemetry-bar-fill { height: 100%; width: 0%; background: var(--neon-cyan); box-shadow: 0 0 8px var(--neon-cyan); transition: width 0.5s ease; }
+        #oscillo-container { width: 100%; height: 110px; margin-top: 10px; background: rgba(0, 5, 15, 0.6); border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 4px; padding: 5px; }
+        #multimeter-display { width: 100%; background: rgba(0, 20, 10, 0.9); border: 1px solid var(--neon-green); border-radius: 4px; padding: 8px; margin-top: 8px; text-align: center; box-shadow: 0 0 10px rgba(57, 255, 20, 0.2); }
+        #multimeter-value { font-size: 1.4rem; font-weight: bold; color: var(--neon-green); text-shadow: 0 0 8px var(--neon-green); }
+        #console-panel { flex: 1; display: flex; flex-direction: column; padding: 20px; background: rgba(2, 4, 10, 0.85); overflow: hidden; }
+        #terminal-display { flex: 1; border: 1px solid rgba(0, 242, 254, 0.3); background: rgba(0, 0, 0, 0.6); padding: 20px; overflow-y: auto; margin-bottom: 20px; }
         .log-entry { margin: 10px 0; line-height: 1.4; font-size: 1rem; }
         .user-cmd { color: #ffffff; font-weight: bold; }
         .tercero-resp { color: var(--neon-cyan); text-shadow: 0 0 3px var(--neon-glow); }
         .system-alert { color: #ffaa00; font-size: 0.85rem; }
-
-        /* Estilos Cyberpunk para Bloques de Código de Programación/Mecánica */
-        .code-block-hud {
-            background-color: var(--terminal-code);
-            border-left: 3px solid var(--neon-cyan);
-            padding: 12px;
-            margin: 10px 0;
-            font-family: 'Consolas', monospace;
-            color: #d2f5ff;
-            font-size: 0.9rem;
-            overflow-x: auto;
-            white-space: pre-wrap;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-        }
-
-        /* Controles de Entrada */
-        #interaction-deck {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .hud-btn {
-            background: transparent;
-            border: 1px solid var(--neon-cyan);
-            color: var(--neon-cyan);
-            padding: 14px 22px;
-            font-family: inherit;
-            font-size: 0.95rem;
-            cursor: pointer;
-            text-transform: uppercase;
-            font-weight: bold;
-            transition: all 0.2s ease;
-            box-shadow: 0 0 5px rgba(0, 242, 254, 0.1);
-            white-space: nowrap;
-        }
-
-        .hud-btn:hover {
-            background: var(--neon-cyan);
-            color: var(--dark-space);
-            box-shadow: 0 0 15px var(--neon-cyan);
-        }
-
-        #mic-btn.active-mic {
-            border-color: var(--alert-red);
-            color: var(--alert-red);
-            animation: alertBlink 1s infinite alternate;
-        }
-
-        #command-input {
-            flex: 1;
-            background: rgba(0, 0, 0, 0.7);
-            border: 1px solid rgba(0, 242, 254, 0.5);
-            color: #ffffff;
-            padding: 14px;
-            font-family: inherit;
-            font-size: 1rem;
-            outline: none;
-            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5);
-        }
-
-        #command-input:focus {
-            border-color: var(--neon-cyan);
-            box-shadow: 0 0 10px var(--neon-glow), inset 0 0 5px rgba(0, 242, 254, 0.2);
-        }
-
-        /* Keyframes */
-        @keyframes rotateCore {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        @keyframes corePulse {
-            0% { transform: scale(1); box-shadow: 0 0 15px var(--neon-cyan); }
-            100% { transform: scale(1.15); box-shadow: 0 0 35px var(--neon-cyan); border-color: #ffffff; }
-        }
-
-        @keyframes alertBlink {
-            0% { box-shadow: 0 0 5px rgba(255, 0, 85, 0.2); }
-            100% { box-shadow: 0 0 20px rgba(255, 0, 85, 0.6); background: rgba(255, 0, 85, 0.1); }
-        }
-
-        @media (max-width: 1024px) {
-            #mainframe-container { flex-direction: column; margin: 5px; }
-            #telemetry-panel {
-                width: 100%; height: auto; border-right: none;
-                border-bottom: 2px solid var(--neon-cyan); padding: 15px;
-                flex-direction: row; gap: 15px;
-            }
-            #arc-reactor { width: 100px; height: 100px; }
-            #arc-reactor::before { width: 70px; height: 70px; }
-            #inner-core { width: 40px; height: 40px; }
-            #oscillo-container, #multimeter-display { display: none; }
-        }
+        .code-block-hud { background-color: var(--terminal-code); border-left: 3px solid var(--neon-cyan); padding: 12px; margin: 10px 0; font-family: monospace; color: #d2f5ff; font-size: 0.9rem; overflow-x: auto; white-space: pre-wrap; }
+        #interaction-deck { display: flex; gap: 12px; align-items: center; }
+        .hud-btn { background: transparent; border: 1px solid var(--neon-cyan); color: var(--neon-cyan); padding: 14px 22px; font-family: inherit; font-size: 0.95rem; cursor: pointer; text-transform: uppercase; font-weight: bold; transition: all 0.2s ease; }
+        .hud-btn:hover { background: var(--neon-cyan); color: var(--dark-space); box-shadow: 0 0 15px var(--neon-cyan); }
+        #mic-btn.active-mic { border-color: var(--alert-red); color: var(--alert-red); }
+        #command-input { flex: 1; background: rgba(0, 0, 0, 0.7); border: 1px solid rgba(0, 242, 254, 0.5); color: #ffffff; padding: 14px; font-family: inherit; font-size: 1rem; outline: none; }
+        @keyframes rotateCore { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes corePulse { 0% { transform: scale(1); } 100% { transform: scale(1.15); } }
     </style>
 </head>
 <body>
-
     <div id="mainframe-container">
         <div id="telemetry-panel">
             <div class="panel-title">NÚCLEO COGNITIVO</div>
-            
             <div id="arc-reactor" onclick="reproducirEfectoSonido('reactor')">
                 <div id="inner-core"></div>
             </div>
-            
             <div style="width: 100%;">
                 <button class="hud-btn" style="width: 100%; margin-bottom: 12px;" onclick="sincronizarCanalAudio()">AUTORIZAR AUDIO</button>
-                
-                <div id="hud-telemetry-display" style="font-size: 0.75rem; color: rgba(0, 242, 254, 0.8); line-height: 1.4; font-family: monospace;">
+                <div style="font-size: 0.75rem; color: rgba(0, 242, 254, 0.8); line-height: 1.4;">
                     CHRONO: <span id="telemetry-clock">00:00:00</span><br>
                     BATTERY: <span id="telemetry-battery">SCANNING...</span>
-                    <div class="telemetry-bar-container">
-                        <div id="bar-battery" class="telemetry-bar-fill"></div>
-                    </div>
+                    <div class="telemetry-bar-container"><div id="bar-battery" class="telemetry-bar-fill"></div></div>
                     NET LATENCY: <span id="telemetry-ping">0 ms</span>
-                    <div class="telemetry-bar-container">
-                        <div id="bar-ping" class="telemetry-bar-fill"></div>
-                    </div>
-                    MATRIX HOST: RENDER CLOUD V4.0
+                    <div class="telemetry-bar-container"><div id="bar-ping" class="telemetry-bar-fill"></div></div>
                 </div>
-
-                <div id="oscillo-container">
-                    <canvas id="oscillo-canvas"></canvas>
-                </div>
-
-                <!-- Display Digital Tipo Multímetro -->
+                <div id="oscillo-container"><canvas id="oscillo-canvas"></canvas></div>
                 <div id="multimeter-display">
-                    <div id="multimeter-header" style="font-size: 0.65rem; color: #39ff14; letter-spacing: 1px; margin-bottom: 2px;">V_SIGNAL_MONITOR</div>
+                    <div id="multimeter-header" style="font-size: 0.65rem; color: #39ff14;">V_SIGNAL_MONITOR</div>
                     <div id="multimeter-value">0.00 V</div>
                 </div>
             </div>
         </div>
-
         <div id="console-panel">
             <div class="panel-title" style="text-align: left; margin-bottom: 15px;">TERCERO OS ONLINE v4.0 // MAINFRAME HUD</div>
-            
             <div id="terminal-display">
-                <div class="log-entry system-alert">> [SISTEMA]: Enlace inicializado. Presione 'AUTORIZAR AUDIO' antes de emitir transmisiones operativas.</div>
+                <div class="log-entry system-alert">> [SISTEMA]: Enlace inicializado. Presione 'AUTORIZAR AUDIO' antes de operar.</div>
             </div>
-
             <div id="interaction-deck">
                 <button id="mic-btn" class="hud-btn" onclick="conmutarMicrofono()">🎤 VOCAL</button>
                 <input type="file" id="matrix-file-loader" style="display: none;" onchange="procesarCargaArchivo()">
                 <button class="hud-btn" onclick="document.getElementById('matrix-file-loader').click()">📁 MATRIZ</button>
-                <input type="text" id="command-input" placeholder="Escriba un comando para el sistema o hable..." onkeypress="evaluarRetorno(event)">
+                <input type="text" id="command-input" placeholder="Escriba un comando o hable..." onkeypress="evaluarRetorno(event)">
                 <button class="hud-btn" onclick="enviarMensajeConsola()">EJECUTAR</button>
             </div>
         </div>
     </div>
-
     <script>
         const terminal = document.getElementById('terminal-display');
         const reactor = document.getElementById('arc-reactor');
         const micBtn = document.getElementById('mic-btn');
         const cmdInput = document.getElementById('command-input');
-        
-        let reconocimientoVoz;
-        let controlVozActivo = false;
-        let oscilloChart;
-        let audioCtx = null;
-        let currentSensorMode = "BATTERY";
-        let currentSensorStatus = "NORMAL";
+        let reconocimientoVoz, controlVozActivo = false, oscilloChart, audioCtx = null;
+        let currentSensorMode = "BATTERY", currentSensorStatus = "NORMAL";
 
-        // --- SISTEMA DE EFECTOS DE SONIDO MEDIANTE WEB AUDIO API (SINTÉTICO / SIN ARCHIVOS) ---
-        function inicializarContextoAudio() {
-            if (!audioCtx) {
-                window.AudioContext = window.AudioContext || window.webkitAudioContext;
-                audioCtx = new AudioContext();
-            }
-        }
-
+        function inicializarContextoAudio() { if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } }
         function reproducirEfectoSonido(tipo) {
-            inicializarContextoAudio();
-            if (!audioCtx) return;
-
-            const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-
-            const tiempoActual = audioCtx.currentTime;
-
+            inicializarContextoAudio(); if (!audioCtx) return;
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination); const t = audioCtx.currentTime;
             if (tipo === 'click') {
-                // Típico sonido corto y seco de click metálico de Stark Industries
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(1200, tiempoActual);
-                osc.frequency.exponentialRampToValueAtTime(150, tiempoActual + 0.08);
-                gainNode.gain.setValueAtTime(0.08, tiempoActual);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, tiempoActual + 0.08);
-                osc.start(tiempoActual);
-                osc.stop(tiempoActual + 0.08);
-            } 
-            else if (tipo === 'alerta') {
-                // Sonido cibernético de advertencia o falla (Modulación oscilante)
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(800, tiempoActual);
-                osc.frequency.setValueAtTime(600, tiempoActual + 0.15);
-                osc.frequency.setValueAtTime(800, tiempoActual + 0.3);
-                gainNode.gain.setValueAtTime(0.12, tiempoActual);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, tiempoActual + 0.55);
-                osc.start(tiempoActual);
-                osc.stop(tiempoActual + 0.6);
-            } 
-            else if (tipo === 'reactor') {
-                // Sonido de barrido y sobrecarga del reactor arc (Estilo Iron Man)
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(50, tiempoActual);
-                osc.frequency.exponentialRampToValueAtTime(2000, tiempoActual + 0.9);
-                gainNode.gain.setValueAtTime(0.15, tiempoActual);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, tiempoActual + 1.0);
-                osc.start(tiempoActual);
-                osc.stop(tiempoActual + 1.0);
-            }
-            else if (tipo === 'boot') {
-                // Secuencia ascendente armónica de encendido
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(150, tiempoActual);
-                osc.frequency.setValueAtTime(300, tiempoActual + 0.15);
-                osc.frequency.setValueAtTime(600, tiempoActual + 0.3);
-                osc.frequency.setValueAtTime(1200, tiempoActual + 0.45);
-                gainNode.gain.setValueAtTime(0.1, tiempoActual);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, tiempoActual + 0.7);
-                osc.start(tiempoActual);
-                osc.stop(tiempoActual + 0.75);
+                osc.type = 'sine'; osc.frequency.setValueAtTime(1200, t); osc.frequency.exponentialRampToValueAtTime(150, t + 0.08);
+                gain.gain.setValueAtTime(0.08, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.08); osc.start(t); osc.stop(t + 0.08);
+            } else if (tipo === 'alerta') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, t); osc.frequency.setValueAtTime(600, t + 0.15);
+                gain.gain.setValueAtTime(0.12, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4); osc.start(t); osc.stop(t + 0.4);
+            } else if (tipo === 'reactor') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(50, t); osc.frequency.exponentialRampToValueAtTime(1800, t + 0.8);
+                gain.gain.setValueAtTime(0.15, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.8); osc.start(t); osc.stop(t + 0.8);
+            } else if (tipo === 'boot') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(200, t); osc.frequency.setValueAtTime(400, t + 0.1); osc.frequency.setValueAtTime(800, t + 0.2);
+                gain.gain.setValueAtTime(0.1, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4); osc.start(t); osc.stop(t + 0.4);
             }
         }
 
-        // --- SISTEMA VOCAL AVANZADO (ESCUCHA CONTINUA) ---
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechEngine = window.SpeechRecognition || window.webkitSpeechRecognition;
-            reconocimientoVoz = new SpeechEngine();
-            reconocimientoVoz.continuous = false;
-            reconocimientoVoz.interimResults = false;
-            reconocimientoVoz.lang = 'es-VE';
-
-            reconocimientoVoz.onstart = () => {
-                reactor.classList.add('core-listening');
-                micBtn.classList.add('active-mic');
-                reproducirEfectoSonido('click');
-                logSistema("Captura vocal activa... Transmitiendo.");
-            };
-
-            reconocimientoVoz.onerror = (e) => {
-                if(e.error !== 'no-speech') {
-                    logSistema("Fallo en enlace vocal: " + e.error);
-                }
-            };
-
-            reconocimientoVoz.onend = () => { 
-                desactivarEstadoMic();
-                // Bucle de reactivación manos libres automático
-                if (controlVozActivo) {
-                    setTimeout(encenderCapturaVocal, 400);
-                }
-            };
-
-            reconocimientoVoz.onresult = (e) => {
-                cmdInput.value = e.results[0][0].transcript;
-                enviarMensajeConsola();
-            };
-        } else {
-            logSistema("ADVERTENCIA: Captura de micro nativo no soportada.");
+            reconocimientoVoz = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            reconocimientoVoz.continuous = false; reconocimientoVoz.interimResults = false; reconocimientoVoz.lang = 'es-VE';
+            reconocimientoVoz.onstart = () => { reactor.classList.add('core-listening'); micBtn.classList.add('active-mic'); reproducirEfectoSonido('click'); };
+            reconocimientoVoz.onend = () => { desactivarEstadoMic(); if (controlVozActivo) setTimeout(encenderCapturaVocal, 400); };
+            reconocimientoVoz.onresult = (e) => { cmdInput.value = e.results[0][0].transcript; enviarMensajeConsola(); };
         }
 
-        function conmutarMicrofono() {
-            reproducirEfectoSonido('click');
-            if (!reconocimientoVoz) return;
-            if (controlVozActivo) {
-                controlVozActivo = false;
-                reconocimientoVoz.stop();
-                desactivarEstadoMic();
-                logSistema("Modo manos libres desactivado.");
-            } else {
-                controlVozActivo = true;
-                encenderCapturaVocal();
-            }
-        }
+        function conmutarMicrofono() { reproducirEfectoSonido('click'); if (!reconocimientoVoz) return; if (controlVozActivo) { controlVozActivo = false; reconocimientoVoz.stop(); desactivarEstadoMic(); } else { controlVozActivo = true; encenderCapturaVocal(); } }
+        function encenderCapturaVocal() { if (reconocimientoVoz && controlVozActivo) try { reconocimientoVoz.start(); } catch(e){} }
+        function desactivarEstadoMic() { reactor.classList.remove('core-listening'); micBtn.classList.remove('active-mic'); }
 
-        function encenderCapturaVocal() {
-            if (!reconocimientoVoz || !controlVozActivo) return;
-            try { reconocimientoVoz.start(); } catch(err) {}
-        }
-
-        function desactivarEstadoMic() {
-            reactor.classList.remove('core-listening');
-            micBtn.classList.remove('active-mic');
-        }
-
-        // --- RENDERIZADO EFECTO ESCRITURA Y BLOQUES DE CÓDIGO ---
         function escribirEnTerminal(texto, tipoClase) {
-            const entradaLog = document.createElement('div');
-            entradaLog.className = `log-entry ${tipoClase}`;
-            terminal.appendChild(entradaLog);
-            
-            const regexBloqueCodigo = /
+            const entrada = document.createElement('div'); entrada.className = `log-entry ${tipoClase}`; terminal.appendChild(entrada);
+            const regex = /
