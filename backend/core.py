@@ -68,7 +68,7 @@ class TerceroCore:
                     if ext in ['.txt', '.py', '.js', '.json', '.html', '.css', '.md', '.log']:
                         try:
                             with open(ruta_completa, 'r', encoding='utf-8', errors='ignore') as f:
-                                contenido_extraido = f.read(20000) # Expandido a 20k caracteres para reportes largos
+                                contenido_extraido = f.read(20000) # Leemos los primeros 20k caracteres
                             
                             # Si detectamos un archivo .log o rastros de errores, encendemos las alertas de diagnóstico
                             if ext == '.log' or any(err in contenido_extraido for err in ['Traceback', 'Error', 'Exception', 'FAIL']):
@@ -127,7 +127,36 @@ class TerceroCore:
             # Conversión vocal a través del VoicePlugin
             self.voice.texto_a_voz(answer, filename=audio_filename)
 
-            return {"text": answer, "audio_file": audio_filename}
+            # --- DETECTOR DE CANAL DE TELEMETRÍA DINÁMICA ---
+            # Escaneamos la respuesta de la IA o la consulta del usuario para instruir al HUD
+            telemetry_mode = "BATTERY"
+            telemetry_status = "NORMAL"
+            msg_upper = message.upper()
+            
+            if "MAP" in msg_upper:
+                telemetry_mode = "MAP"
+                if any(err in msg_upper for err in ["FALLA", "PROBLEMA", "ERROR", "P0107", "P0108"]):
+                    telemetry_status = "FALLA"
+            elif "IAT" in msg_upper:
+                telemetry_mode = "IAT"
+                if any(err in msg_upper for err in ["FALLA", "PROBLEMA", "ERROR", "P0113"]):
+                    telemetry_status = "FALLA"
+            elif any(bat in msg_upper for bat in ["BATERIA", "BATTERY", "ALTERNADOR"]):
+                telemetry_mode = "BATTERY"
+                if "FALLA" in msg_upper or "PROBLEMA" in msg_upper:
+                    telemetry_status = "FALLA"
+
+            return {
+                "text": answer, 
+                "audio_file": audio_filename,
+                "telemetry_mode": telemetry_mode,
+                "telemetry_status": telemetry_status
+            }
 
         except Exception as e:
-            return {"text": f"Error en el núcleo de Tercero: {str(e)}", "audio_file": None}
+            return {
+                "text": f"Error en el núcleo de Tercero: {str(e)}", 
+                "audio_file": None,
+                "telemetry_mode": "BATTERY",
+                "telemetry_status": "NORMAL"
+            }
