@@ -13,7 +13,6 @@ class TerceroCore:
         self.memory = MemoryManager()
         self.voice = VoicePlugin()
         self.histories = {}
-        # Eliminamos la llamada a iniciar_conexion_nube() porque Render ya nos da URL pública
 
     def chat(self, user_id: str, message: str) -> dict:
         try:
@@ -31,7 +30,6 @@ class TerceroCore:
             messages = [system_message] + history[-15:] + [{"role": "user", "content": message}]
             answer = self.llm.chat(messages)
 
-            # PROCESADOR DE COMANDOS (Si falla en la nube, el try/except lo controla)
             try:
                 match = re.search(r"\{.*\}", answer, re.DOTALL)
                 if match:
@@ -48,9 +46,10 @@ class TerceroCore:
             history.append({"role": "user", "content": message})
             history.append({"role": "assistant", "content": answer})
 
+            # Generación de voz con ruta absoluta para evitar errores en Render
             audio_filename = f"response_{int(time.time())}.mp3"
-            # OJO: Asegúrate de que VoicePlugin.texto_a_voz guarde en la carpeta correcta
-            self.voice.texto_a_voz(answer, filename=audio_filename)
+            save_path = os.path.join("uploads", audio_filename)
+            self.voice.texto_a_voz(answer, filename=save_path)
 
             return {"text": answer, "audio_file": audio_filename}
 
