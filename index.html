@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERCERO OS | MAINFRAME V3.5</title>
+    <title>TERCERO OS | MAINFRAME V4.0</title>
     <!-- Cargamos Chart.js para el Osciloscopio de Telemetría -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -14,6 +14,7 @@
             --panel-bg: rgba(6, 13, 26, 0.7);
             --terminal-code: #102a45;
             --neon-green: #39ff14;
+            --alert-red: #ff0055;
         }
 
         * { box-sizing: border-box; }
@@ -78,6 +79,7 @@
             box-shadow: 0 0 15px var(--neon-cyan);
             transition: all 0.3s ease;
             margin-bottom: 10px;
+            cursor: pointer;
         }
 
         #arc-reactor::before {
@@ -105,12 +107,12 @@
         }
 
         .core-listening {
-            border-color: #ff0055 !important;
-            box-shadow: 0 0 25px #ff0055 !important;
+            border-color: var(--alert-red) !important;
+            box-shadow: 0 0 25px var(--alert-red) !important;
         }
         .core-listening #inner-core {
-            background-color: #ff0055 !important;
-            box-shadow: 0 0 30px #ff0055 !important;
+            background-color: var(--alert-red) !important;
+            box-shadow: 0 0 30px var(--alert-red) !important;
         }
 
         /* BARRAS DE TELEMETRÍA DE NEÓN */
@@ -154,6 +156,7 @@
             margin-top: 8px;
             text-align: center;
             box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
         #multimeter-value {
             font-size: 1.4rem;
@@ -231,8 +234,8 @@
         }
 
         #mic-btn.active-mic {
-            border-color: #ff0055;
-            color: #ff0055;
+            border-color: var(--alert-red);
+            color: var(--alert-red);
             animation: alertBlink 1s infinite alternate;
         }
 
@@ -289,7 +292,7 @@
         <div id="telemetry-panel">
             <div class="panel-title">NÚCLEO COGNITIVO</div>
             
-            <div id="arc-reactor">
+            <div id="arc-reactor" onclick="reproducirEfectoSonido('reactor')">
                 <div id="inner-core"></div>
             </div>
             
@@ -306,7 +309,7 @@
                     <div class="telemetry-bar-container">
                         <div id="bar-ping" class="telemetry-bar-fill"></div>
                     </div>
-                    MATRIX HOST: RENDER CLOUD V3.5
+                    MATRIX HOST: RENDER CLOUD V4.0
                 </div>
 
                 <div id="oscillo-container">
@@ -315,14 +318,14 @@
 
                 <!-- Display Digital Tipo Multímetro -->
                 <div id="multimeter-display">
-                    <div style="font-size: 0.65rem; color: #39ff14; letter-spacing: 1px; margin-bottom: 2px;">V_SIGNAL_MONITOR</div>
+                    <div id="multimeter-header" style="font-size: 0.65rem; color: #39ff14; letter-spacing: 1px; margin-bottom: 2px;">V_SIGNAL_MONITOR</div>
                     <div id="multimeter-value">0.00 V</div>
                 </div>
             </div>
         </div>
 
         <div id="console-panel">
-            <div class="panel-title" style="text-align: left; margin-bottom: 15px;">TERCERO OS ONLINE v3.5 // MAINFRAME HUD</div>
+            <div class="panel-title" style="text-align: left; margin-bottom: 15px;">TERCERO OS ONLINE v4.0 // MAINFRAME HUD</div>
             
             <div id="terminal-display">
                 <div class="log-entry system-alert">> [SISTEMA]: Enlace inicializado. Presione 'AUTORIZAR AUDIO' antes de emitir transmisiones operativas.</div>
@@ -347,8 +350,73 @@
         let reconocimientoVoz;
         let controlVozActivo = false;
         let oscilloChart;
+        let audioCtx = null;
         let currentSensorMode = "BATTERY";
         let currentSensorStatus = "NORMAL";
+
+        // --- SISTEMA DE EFECTOS DE SONIDO MEDIANTE WEB AUDIO API (SINTÉTICO / SIN ARCHIVOS) ---
+        function inicializarContextoAudio() {
+            if (!audioCtx) {
+                window.AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+        }
+
+        function reproducirEfectoSonido(tipo) {
+            inicializarContextoAudio();
+            if (!audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            const tiempoActual = audioCtx.currentTime;
+
+            if (tipo === 'click') {
+                // Típico sonido corto y seco de click metálico de Stark Industries
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1200, tiempoActual);
+                osc.frequency.exponentialRampToValueAtTime(150, tiempoActual + 0.08);
+                gainNode.gain.setValueAtTime(0.08, tiempoActual);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, tiempoActual + 0.08);
+                osc.start(tiempoActual);
+                osc.stop(tiempoActual + 0.08);
+            } 
+            else if (tipo === 'alerta') {
+                // Sonido cibernético de advertencia o falla (Modulación oscilante)
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(800, tiempoActual);
+                osc.frequency.setValueAtTime(600, tiempoActual + 0.15);
+                osc.frequency.setValueAtTime(800, tiempoActual + 0.3);
+                gainNode.gain.setValueAtTime(0.12, tiempoActual);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, tiempoActual + 0.55);
+                osc.start(tiempoActual);
+                osc.stop(tiempoActual + 0.6);
+            } 
+            else if (tipo === 'reactor') {
+                // Sonido de barrido y sobrecarga del reactor arc (Estilo Iron Man)
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(50, tiempoActual);
+                osc.frequency.exponentialRampToValueAtTime(2000, tiempoActual + 0.9);
+                gainNode.gain.setValueAtTime(0.15, tiempoActual);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, tiempoActual + 1.0);
+                osc.start(tiempoActual);
+                osc.stop(tiempoActual + 1.0);
+            }
+            else if (tipo === 'boot') {
+                // Secuencia ascendente armónica de encendido
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(150, tiempoActual);
+                osc.frequency.setValueAtTime(300, tiempoActual + 0.15);
+                osc.frequency.setValueAtTime(600, tiempoActual + 0.3);
+                osc.frequency.setValueAtTime(1200, tiempoActual + 0.45);
+                gainNode.gain.setValueAtTime(0.1, tiempoActual);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, tiempoActual + 0.7);
+                osc.start(tiempoActual);
+                osc.stop(tiempoActual + 0.75);
+            }
+        }
 
         // --- SISTEMA VOCAL AVANZADO (ESCUCHA CONTINUA) ---
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
@@ -361,6 +429,7 @@
             reconocimientoVoz.onstart = () => {
                 reactor.classList.add('core-listening');
                 micBtn.classList.add('active-mic');
+                reproducirEfectoSonido('click');
                 logSistema("Captura vocal activa... Transmitiendo.");
             };
 
@@ -387,6 +456,7 @@
         }
 
         function conmutarMicrofono() {
+            reproducirEfectoSonido('click');
             if (!reconocimientoVoz) return;
             if (controlVozActivo) {
                 controlVozActivo = false;
