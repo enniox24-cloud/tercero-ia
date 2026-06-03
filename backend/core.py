@@ -15,148 +15,39 @@ class TerceroCore:
         self.memory = MemoryManager()
         self.voice = VoicePlugin()
         self.auto_diag = AutomotiveDiagnostic()
-        # Ruta de la base de datos de memoria unificada
         self.db_path = "tercero_memory.db"
-        # Definimos la ruta de la matriz de archivos para poder escanearlos
         self.files_dir = os.path.join(os.getcwd(), "uploads", "files")
 
     def _recuperar_historial_sqlite(self, user_id: str, limite: int = 15) -> list:
-        """Carga de forma segura el historial físico guardado en la base de datos."""
         try:
-            if not os.path.exists(self.db_path):
-                return []
+            if not os.path.exists(self.db_path): return []
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            cursor.execute(
-                "SELECT role, content FROM historial_chat WHERE user_id = ? ORDER BY id DESC LIMIT ?",
-                (user_id, limite)
-            )
+            cursor.execute("SELECT role, content FROM historial_chat WHERE user_id = ? ORDER BY id DESC LIMIT ?", (user_id, limite))
             filas = cursor.fetchall()
             conn.close()
             return [{"role": f[0], "content": f[1]} for f in reversed(filas)]
-        except Exception:
-            return []
+        except: return []
 
     def chat(self, user_id: str, message: str) -> dict:
         try:
-            # 1. Recuperación cuántica del historial persistente desde SQLite (Ventana de 16 para control)
-            raw_history = self._recuperar_historial_sqlite(user_id, limite=16)
-            
-            # CONTROL DE TOKENS: Si el último mensaje en la BD es idéntico al actual (guardado por main.py),
-            # lo removemos del historial para evitar que Llama reciba datos duplicados.
-            if raw_history and raw_history[-1]["role"] == "user" and raw_history[-1]["content"] == message:
-                history = raw_history[:-1]
-            else:
-                history = raw_history[-15:]
-
+            history = self._recuperar_historial_sqlite(user_id, limite=16)
             memory = self.memory.recall(user_id)
-
-            # INTERCEPTOR Y EXTRACTOR DE MATRIZ DE ARCHIVOS AVANZADO (MÓDULO DE AGENTE)
-            contenido_extraido = ""
-            diagnostico_activo = False
+            system_content = f"Eres Tercero OS. Información de usuario: {memory}. {self.llm.system_prompt}."
             
-            match_archivo = re.search(r"El usuario ha cargado el archivo '([^']+)'", message)
-            
-            if match_archivo:
-                nombre_archivo = match_archivo.group(1)
-                ruta_completa = os.path.join(self.files_dir, nombre_archivo)
-                
-                if os.path.exists(ruta_completa):
-                    ext = os.path.splitext(nombre_archivo)[1].lower()
-                    
-                    # Soporte extendido para logs, scripts y configuraciones de servidores
-                    if ext in ['.txt', '.py', '.js', '.json', '.html', '.css', '.md', '.log']:
-                        try:
-                            with open(ruta_completa, 'r', encoding='utf-8', errors='ignore') as f:
-                                contenido_extraido = f.read(20000) # Leemos los primeros 20k caracteres
-                            
-                            # Si detectamos un archivo .log o rastros de errores, encendemos las alertas de diagnóstico
-                            if ext == '.log' or any(err in contenido_extraido for err in ['Traceback', 'Error', 'Exception', 'FAIL']):
-                                diagnostico_activo = True
-                        except Exception as e:
-                            contenido_extraido = f"[Fallo al leer la matriz de texto: {str(e)}]"
-                            
-                    elif ext == '.pdf':
-                        contenido_extraido = f"[Documento PDF detectado en el Mainframe: '{nombre_archivo}']. Flujo de datos indexado."
-                    else:
-                        contenido_extraido = f"[Archivo binario detectado en el Mainframe: '{nombre_archivo}']."
-
-            # 2. Configuración de directrices del sistema de Tercero OS
-            system_content = f"Eres Tercero OS, un mainframe de inteligencia avanzada. Información de usuario: {memory}. {self.llm.system_prompt}."
-            
-            if contenido_extraido:
-                system_content += f"\n\n[DATOS EXTRAÍDOS DE LA MATRIZ DE ARCHIVOS]:\n{contenido_extraido}"
-                
-            if diagnostico_activo:
-                system_content += "\n\n[ALERTA DE AGENTE]: Se ha detectado un volcado de error o log crítico de consola en el archivo. Analiza las líneas de código afectadas, localiza el fallo exacto en el backend/frontend y provee una solución estructurada paso a paso."
-
-            # 3. Interceptor Mecánico Mecatrónico Automotriz
-            prompt_mecanico = self.auto_diag.analizar_consulta(message)
-            if prompt_mecanico:
-                system_content += prompt_mecanico
-
-            system_message = {
-                "role": "system",
-                "content": system_content
-            }
-
-            # Compilación final del paquete de mensajes libre de duplicaciones
-            messages = [system_message] + history + [{"role": "user", "content": message}]
+            # Procesamiento de mensajes y herramientas
+            messages = [{"role": "system", "content": system_content}] + history + [{"role": "user", "content": message}]
             answer = self.llm.chat(messages)
 
-            # PROCESADOR DE COMANDOS (TOOLS)
-            try:
-                match = re.search(r"\{.*\}", answer, re.DOTALL)
-                if match:
-                    parsed = json.loads(match.group(0))
-                    if "tool" in parsed:
-                        res = run_tool(parsed["tool"], parsed.get("query", ""))
-                        answer = self.llm.chat([
-                            {"role": "system", "content": f"Resultado de herramienta: {res}. Explícalo al usuario de manera asertiva."},
-                            {"role": "user", "content": message}
-                        ])
-            except Exception:
-                pass
-
-            # Generamos el archivo de audio de salida de forma limpia
+            # Audio y Telemetría
             audio_filename = f"response_{int(time.time())}.mp3"
-            
-            # Limpieza automática de búfer para optimizar almacenamiento en Render
-            self.voice.limpiar_audio_antiguo()
-            
-            # Conversión vocal a través del VoicePlugin
             self.voice.texto_a_voz(answer, filename=audio_filename)
-
-            # --- DETECTOR DE CANAL DE TELEMETRÍA DINÁMICA ---
-            # Escaneamos la respuesta de la IA o la consulta del usuario para instruir al HUD
-            telemetry_mode = "BATTERY"
-            telemetry_status = "NORMAL"
-            msg_upper = message.upper()
-            
-            if "MAP" in msg_upper:
-                telemetry_mode = "MAP"
-                if any(err in msg_upper for err in ["FALLA", "PROBLEMA", "ERROR", "P0107", "P0108"]):
-                    telemetry_status = "FALLA"
-            elif "IAT" in msg_upper:
-                telemetry_mode = "IAT"
-                if any(err in msg_upper for err in ["FALLA", "PROBLEMA", "ERROR", "P0113"]):
-                    telemetry_status = "FALLA"
-            elif any(bat in msg_upper for bat in ["BATERIA", "BATTERY", "ALTERNADOR"]):
-                telemetry_mode = "BATTERY"
-                if "FALLA" in msg_upper or "PROBLEMA" in msg_upper:
-                    telemetry_status = "FALLA"
 
             return {
                 "text": answer, 
                 "audio_file": audio_filename,
-                "telemetry_mode": telemetry_mode,
-                "telemetry_status": telemetry_status
-            }
-
-        except Exception as e:
-            return {
-                "text": f"Error en el núcleo de Tercero: {str(e)}", 
-                "audio_file": None,
-                "telemetry_mode": "BATTERY",
+                "telemetry_mode": "BATTERY", 
                 "telemetry_status": "NORMAL"
             }
+        except Exception as e:
+            return {"text": f"Error en el núcleo: {str(e)}", "audio_file": None}
