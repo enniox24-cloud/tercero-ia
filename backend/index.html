@@ -2,86 +2,34 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tercero OS | Mainframe Cognitivo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <title>Tercero OS</title>
     <style>
-        :root {
-            --bg-main: #060913; --primary: #00f2fe; --neon-green: #39ff14; 
-            --neon-orange: #ff9900; --text: #e0e6ed; --bg-sidebar: #0b1120;
-        }
-        body { font-family: 'Share Tech Mono', monospace; background: var(--bg-main); color: var(--text); height: 100vh; display: flex; margin: 0; overflow: hidden; }
-        
-        #sidebar { width: 260px; background: var(--bg-sidebar); border-right: 1px solid #14223d; display: flex; flex-direction: column; padding: 20px; }
-        #brand { font-family: 'Orbitron', sans-serif; color: var(--primary); text-align: center; margin-bottom: 30px; letter-spacing: 2px; text-shadow: 0 0 10px var(--primary); }
-        
-        #main-chat { flex: 1; display: flex; flex-direction: column; }
-        #hud-top-bar { padding: 20px; display: flex; justify-content: center; border-bottom: 1px solid #14223d; }
-        #hud-core { width: 60px; height: 60px; border: 3px solid var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.3s; box-shadow: 0 0 15px rgba(0, 242, 254, 0.5); }
-        
-        #workspace { flex: 1; display: flex; overflow: hidden; }
-        #chat-window { flex: 1; padding: 20px; overflow-y: auto; color: white; }
-        #hud-telemetry { width: 300px; background: var(--bg-sidebar); padding: 20px; border-left: 1px solid #14223d; display: flex; flex-direction: column; gap: 15px; }
-        
-        #serial-console { flex: 1; background: #000; border: 1px solid var(--primary); color: var(--neon-green); padding: 10px; font-size: 11px; overflow-y: auto; white-space: pre-wrap; }
-        .bar-container { width: 100%; height: 10px; background: #0c1222; border: 1px solid #14223d; }
-        .bar-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.5s; }
-        button { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 10px; cursor: pointer; font-family: 'Orbitron'; margin-bottom: 10px; }
+        body { background: #060913; color: #00f2fe; font-family: sans-serif; display: flex; height: 100vh; margin: 0; }
+        #chat-window { flex: 1; border-right: 1px solid #14223d; padding: 20px; }
+        #telemetry { width: 300px; padding: 20px; }
     </style>
 </head>
 <body>
-    <div id="sidebar">
-        <div id="brand">TERCERO OS</div>
-        <button onclick="iniciarNuevoChat()">+ NUEVO VECTOR</button>
-        <div id="chats-list"></div>
+    <div id="chat-window">
+        <h1>TERCERO OS ONLINE</h1>
+        <input type="text" id="msg" placeholder="Enviar comando...">
+        <button onclick="enviar()">EJECUTAR</button>
+        <div id="resp"></div>
     </div>
-    
-    <div id="main-chat">
-        <div id="hud-top-bar"><div id="hud-core" id="core-status">SYS</div></div>
-        <div id="workspace">
-            <div id="chat-window"></div>
-            <div id="hud-telemetry">
-                <h3>TELEMETRÍA</h3>
-                <span>CPU: <span id="cpu-val">0%</span></span>
-                <div class="bar-container"><div id="cpu-bar" class="bar-fill"></div></div>
-                <span>RAM: <span id="ram-val">0%</span></span>
-                <div class="bar-container"><div id="ram-bar" class="bar-fill"></div></div>
-                <div id="serial-console">INICIALIZANDO CONEXIÓN...</div>
-            </div>
-        </div>
+    <div id="telemetry">
+        <h3>STATUS: <span id="status">CONECTADO</span></h3>
     </div>
-
     <script>
-        // Lógica de Sincronización con el Servidor
-        async function actualizarTelemetria() {
-            try {
-                const response = await fetch('/api/telemetria');
-                const data = await response.json();
-                
-                // Actualizar métricas visuales
-                document.getElementById('cpu-val').innerText = data.cpu + "%";
-                document.getElementById('cpu-bar').style.width = data.cpu + "%";
-                document.getElementById('ram-val').innerText = data.ram + "%";
-                document.getElementById('ram-bar').style.width = data.ram + "%";
-                
-                // Actualizar Consola
-                const consoleLog = document.getElementById('serial-console');
-                consoleLog.innerText = `[${new Date().toLocaleTimeString()}] STATUS: ${data.status}\nLOG: ${data.serial_log}`;
-                
-                // Cambiar color núcleo según estado
-                document.getElementById('hud-core').style.borderColor = data.status === "ONLINE" ? "var(--neon-green)" : "var(--neon-orange)";
-            } catch (e) {
-                console.error("Error de telemetría", e);
-            }
+        async function enviar() {
+            const m = document.getElementById('msg').value;
+            const res = await fetch('/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: "Ennio", message: m})
+            });
+            const data = await res.json();
+            document.getElementById('resp').innerText = data.text;
         }
-
-        function iniciarNuevoChat() {
-            document.getElementById('chat-window').innerHTML = "<div style='color:var(--primary)'>Nuevo vector de datos iniciado...</div>";
-        }
-
-        // Ejecución inicial
-        setInterval(actualizarTelemetria, 1500);
-        actualizarTelemetria();
     </script>
 </body>
 </html>
