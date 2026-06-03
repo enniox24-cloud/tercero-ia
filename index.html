@@ -45,6 +45,7 @@
             align-items: center;
             padding: 25px;
             justify-content: space-between;
+            transition: all 0.3s ease;
         }
 
         .panel-title {
@@ -112,6 +113,7 @@
             flex-direction: column;
             padding: 20px;
             background: rgba(2, 4, 10, 0.85);
+            overflow: hidden;
         }
 
         #terminal-display {
@@ -148,6 +150,7 @@
             font-weight: bold;
             transition: all 0.2s ease;
             box-shadow: 0 0 5px rgba(0, 242, 254, 0.1);
+            white-space: nowrap;
         }
 
         .hud-btn:hover {
@@ -193,6 +196,108 @@
         @keyframes alertBlink {
             0% { box-shadow: 0 0 5px rgba(255, 0, 85, 0.2); }
             100% { box-shadow: 0 0 20px rgba(255, 0, 85, 0.6); background: rgba(255, 0, 85, 0.1); }
+        }
+
+        /* ========================================================
+           OPTIMIZACIÓN RESPONSIVA (MÓVILES, TABLETS E IPADS)
+           ======================================================== */
+        
+        /* Ajustes para Tablets / iPads en orientación vertical (Menos de 1024px) */
+        @media (max-width: 1024px) {
+            #mainframe-container {
+                flex-direction: column;
+                margin: 5px;
+            }
+            #telemetry-panel {
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 2px solid var(--neon-cyan);
+                padding: 15px;
+                flex-direction: row;
+                gap: 15px;
+            }
+            #arc-reactor {
+                width: 100px;
+                height: 100px;
+            }
+            #arc-reactor::before {
+                width: 70px;
+                height: 70px;
+            }
+            #inner-core {
+                width: 40px;
+                height: 40px;
+            }
+            #telemetry-panel > div:last-child {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+            }
+        }
+
+        /* Ajustes estrictos para Teléfonos Celulares (Menos de 768px) */
+        @media (max-width: 768px) {
+            body {
+                overflow: auto; /* Permite scroll global si el teclado del móvil se despliega */
+                height: auto;
+                min-height: 100vh;
+            }
+            #mainframe-container {
+                height: auto;
+                min-height: calc(100vh - 10px);
+                flex-direction: column;
+            }
+            #telemetry-panel {
+                flex-direction: column;
+                padding: 15px;
+                gap: 10px;
+            }
+            #arc-reactor {
+                width: 90px;
+                height: 90px;
+            }
+            #arc-reactor::before {
+                width: 60px;
+                height: 60px;
+            }
+            #inner-core {
+                width: 30px;
+                height: 30px;
+            }
+            #console-panel {
+                padding: 12px;
+                height: 60vh; /* Da un espacio óptimo al chat en pantallas táctiles */
+            }
+            .panel-title {
+                font-size: 0.9rem;
+            }
+            .log-entry {
+                font-size: 0.85rem;
+            }
+            #interaction-deck {
+                display: grid;
+                grid-template-columns: 1fr 1fr; /* Convierte los botones inferiores en una cuadrícula limpia */
+                gap: 8px;
+            }
+            #command-input {
+                grid-column: span 2; /* El campo de texto ocupa todo el ancho de la fila */
+                font-size: 0.9rem;
+                padding: 10px;
+            }
+            .hud-btn {
+                padding: 10px 12px;
+                font-size: 0.8rem;
+                text-align: center;
+                justify-content: center;
+                display: flex;
+                align-items: center;
+            }
+            /* El botón ejecutar ocupa las dos columnas abajo para no romperse */
+            #interaction-deck > button:last-child {
+                grid-column: span 2;
+            }
         }
     </style>
 </head>
@@ -282,7 +387,6 @@
         async function calcularLatenciaRed() {
             const inicio = Date.now();
             try {
-                // Hacemos una llamada ligera a los encabezados del servidor para medir la velocidad de respuesta real
                 await fetch('/chat', { method: 'OPTIONS' }).catch(() => {});
                 const latencia = Date.now() - inicio;
                 document.getElementById('telemetry-ping').innerText = `${latencia} ms`;
@@ -294,7 +398,6 @@
         calcularLatenciaRed();
         // ---------------------------------------------------------
 
-        // Configuración nativa del reconocedor del navegador
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             const SpeechEngine = window.SpeechRecognition || window.webkitSpeechRecognition;
             reconocimientoVoz = new SpeechEngine();
@@ -370,7 +473,6 @@
                 irAlFondo();
 
                 if (datos.audio_file) {
-                    // Mapeamos a la ruta estática correcta que configuramos previamente
                     emitirAudioNucleo(`/uploads/responses/${datos.audio_file}`);
                 }
             } catch (err) {
