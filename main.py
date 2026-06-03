@@ -19,7 +19,7 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# Configuración estricta de directorios
+# Configuración estricta de directorios en el Mainframe
 UPLOAD_DIR = "uploads"
 FILES_DIR = os.path.join(UPLOAD_DIR, "files")
 RESPONSES_DIR = os.path.join(UPLOAD_DIR, "responses")
@@ -48,43 +48,47 @@ def inicializar_base_datos():
     conn.close()
 
 def guardar_en_memoria(user_id: str, role: str, content: str):
-    """Registra una transmisión en la base de datos."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO historial_chat (user_id, role, content) VALUES (?, ?, ?)",
-        (user_id, role, content)
-    )
-    conn.commit()
-    conn.close()
+    """Registra una transmisión de datos de manera física en SQLite."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO historial_chat (user_id, role, content) VALUES (?, ?, ?)",
+            (user_id, role, content)
+        )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[ERROR SQLITE WRITE]: No se pudo escribir en la memoria: {str(e)}")
 
-def obtener_historial_memoria(user_id: str, limite: int = 10):
-    """Recupera los últimos paquetes de datos del usuario para el contexto."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT role, content FROM historial_chat WHERE user_id = ? ORDER BY id DESC LIMIT ?",
-        (user_id, limite)
-    )
-    filas = cursor.fetchall()
-    conn.close()
-    
-    # Invertimos el orden para que vaya de la más antigua a la más reciente
-    mensajes = [{"role": f[0], "content": f[1]} for f in reversed(filas)]
-    return mensajes
+def obtener_historial_memoria(user_id: str, limite: int = 15):
+    """Recupera los últimos paquetes de datos ordenados cronológicamente."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT role, content FROM historial_chat WHERE user_id = ? ORDER BY id DESC LIMIT ?",
+            (user_id, limite)
+        )
+        filas = cursor.fetchall()
+        conn.close()
+        # Invertimos el orden para conservar la línea temporal del chat
+        return [{"role": f[0], "content": f[1]} for f in reversed(filas)]
+    except Exception:
+        return []
 
-# Inicializamos la memoria al arrancar el servidor
+# Inicializamos el mainframe de memoria al arrancar la aplicación
 inicializar_base_datos()
 # ========================================================
 
-# Montar la carpeta raíz de almacenamiento estático
+# Montar la carpeta raíz de almacenamiento estático para descargas de audio y visuales
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 @app.get("/")
 async def root():
     return FileResponse("index.html")
 
-# Endpoint para chat estándar con inyección de memoria persistente
+# Endpoint optimizado para el Chat del HUD con prevención de duplicación
 @app.post("/chat")
 async def chat(data: dict):
     if not core: 
@@ -96,18 +100,12 @@ async def chat(data: dict):
     if not mensaje_usuario:
         return {"text": "Paquete de datos vacío.", "audio_url": None}
 
-    # 1. Guardamos lo que Ennio acaba de decir en la base de datos
-    guardar_en_memoria(user_id, "user", mensaje_usuario)
-    
-    # 2. Recuperamos el contexto histórico acumulado para TerceroCore
-    # Nota: Si tu TerceroCore aún no procesa arreglos de historial, esto sirve de base para la Fase 3
-    historial_contexto = obtener_historial_memoria(user_id, limite=10)
-    
-    # 3. Transmisión al procesador cognitivo central
+    # 1. Procesamos la respuesta pasándole el mensaje directamente al núcleo cognitivo
     res = core.chat(user_id, mensaje_usuario)
     respuesta_texto = res.get("text", "")
     
-    # 4. Guardamos la respuesta de Tercero en la base de datos para el futuro
+    # 2. Una vez que el Core responde de forma aislada, guardamos AMBOS flujos en SQLite
+    guardar_en_memoria(user_id, "user", mensaje_usuario)
     if respuesta_texto:
         guardar_en_memoria(user_id, "assistant", respuesta_texto)
     
@@ -116,21 +114,24 @@ async def chat(data: dict):
     
     return {"text": respuesta_texto, "audio_url": audio_url}
 
-# Endpoint para subida de archivos con registro en memoria
+# Endpoint para inyección en la matriz de archivos
 @app.post("/upload")
 async def upload_file(user_id: str = Form(...), file: UploadFile = File(...)):
     file_path = os.path.join(FILES_DIR, file.filename)
+    
+    # Almacenamiento físico del script o log en la carpeta compartida
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
-    prompt_archivo = f"[SISTEMA]: El usuario ha cargado el archivo '{file.filename}'. Analízalo y confirma su recepción."
+    # Formateamos el interceptor exacto que TerceroCore está esperando leer con Regex
+    prompt_archivo = f"El usuario ha cargado el archivo '{file.filename}'. Analízalo y confirma su recepción."
     
-    # Registramos la acción del archivo en la base de datos
-    guardar_en_memoria(user_id, "user", f"[Archivo Inyectado: {file.filename}]")
-    
+    # Transmisión directa al núcleo
     res = core.chat(user_id, prompt_archivo)
     respuesta_texto = res.get("text", "")
     
+    # Guardamos los registros históricos de la carga del archivo
+    guardar_en_memoria(user_id, "user", f"[Archivo Inyectado al Mainframe: {file.filename}]")
     if respuesta_texto:
         guardar_en_memoria(user_id, "assistant", respuesta_texto)
         
@@ -141,4 +142,4 @@ async def upload_file(user_id: str = Form(...), file: UploadFile = File(...)):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port)
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
