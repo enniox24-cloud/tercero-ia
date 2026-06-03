@@ -106,6 +106,26 @@
             box-shadow: 0 0 30px #ff0055 !important;
         }
 
+        /* NUEVO: ESTILOS PARA BARRAS DE TELEMETRÍA DE NEÓN */
+        .telemetry-bar-container {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            height: 12px;
+            margin: 5px 0 12px 0;
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .telemetry-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--neon-cyan);
+            box-shadow: 0 0 8px var(--neon-cyan);
+            transition: width 0.5s ease, background-color 0.5s ease;
+        }
+
         /* Panel Derecho: Consola y Terminal */
         #console-panel {
             flex: 1;
@@ -198,106 +218,36 @@
             100% { box-shadow: 0 0 20px rgba(255, 0, 85, 0.6); background: rgba(255, 0, 85, 0.1); }
         }
 
-        /* ========================================================
-           OPTIMIZACIÓN RESPONSIVA (MÓVILES, TABLETS E IPADS)
-           ======================================================== */
-        
-        /* Ajustes para Tablets / iPads en orientación vertical (Menos de 1024px) */
+        /* Optimizaciones responsivas */
         @media (max-width: 1024px) {
-            #mainframe-container {
-                flex-direction: column;
-                margin: 5px;
-            }
+            #mainframe-container { flex-direction: column; margin: 5px; }
             #telemetry-panel {
-                width: 100%;
-                height: auto;
-                border-right: none;
-                border-bottom: 2px solid var(--neon-cyan);
-                padding: 15px;
-                flex-direction: row;
-                gap: 15px;
+                width: 100%; height: auto; border-right: none;
+                border-bottom: 2px solid var(--neon-cyan); padding: 15px;
+                flex-direction: row; gap: 15px;
             }
-            #arc-reactor {
-                width: 100px;
-                height: 100px;
-            }
-            #arc-reactor::before {
-                width: 70px;
-                height: 70px;
-            }
-            #inner-core {
-                width: 40px;
-                height: 40px;
-            }
+            #arc-reactor { width: 100px; height: 100px; }
+            #arc-reactor::before { width: 70px; height: 70px; }
+            #inner-core { width: 40px; height: 40px; }
             #telemetry-panel > div:last-child {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
+                flex: 1; display: flex; flex-direction: column; justify-content: center;
             }
         }
 
-        /* Ajustes estrictos para Teléfonos Celulares (Menos de 768px) */
         @media (max-width: 768px) {
-            body {
-                overflow: auto; /* Permite scroll global si el teclado del móvil se despliega */
-                height: auto;
-                min-height: 100vh;
-            }
-            #mainframe-container {
-                height: auto;
-                min-height: calc(100vh - 10px);
-                flex-direction: column;
-            }
-            #telemetry-panel {
-                flex-direction: column;
-                padding: 15px;
-                gap: 10px;
-            }
-            #arc-reactor {
-                width: 90px;
-                height: 90px;
-            }
-            #arc-reactor::before {
-                width: 60px;
-                height: 60px;
-            }
-            #inner-core {
-                width: 30px;
-                height: 30px;
-            }
-            #console-panel {
-                padding: 12px;
-                height: 60vh; /* Da un espacio óptimo al chat en pantallas táctiles */
-            }
-            .panel-title {
-                font-size: 0.9rem;
-            }
-            .log-entry {
-                font-size: 0.85rem;
-            }
-            #interaction-deck {
-                display: grid;
-                grid-template-columns: 1fr 1fr; /* Convierte los botones inferiores en una cuadrícula limpia */
-                gap: 8px;
-            }
-            #command-input {
-                grid-column: span 2; /* El campo de texto ocupa todo el ancho de la fila */
-                font-size: 0.9rem;
-                padding: 10px;
-            }
-            .hud-btn {
-                padding: 10px 12px;
-                font-size: 0.8rem;
-                text-align: center;
-                justify-content: center;
-                display: flex;
-                align-items: center;
-            }
-            /* El botón ejecutar ocupa las dos columnas abajo para no romperse */
-            #interaction-deck > button:last-child {
-                grid-column: span 2;
-            }
+            body { overflow: auto; height: auto; min-height: 100vh; }
+            #mainframe-container { height: auto; min-height: calc(100vh - 10px); flex-direction: column; }
+            #telemetry-panel { flex-direction: column; padding: 15px; gap: 10px; }
+            #arc-reactor { width: 90px; height: 90px; }
+            #arc-reactor::before { width: 60px; height: 60px; }
+            #inner-core { width: 30px; height: 30px; }
+            #console-panel { padding: 12px; height: 60vh; }
+            .panel-title { font-size: 0.9rem; }
+            .log-entry { font-size: 0.85rem; }
+            #interaction-deck { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+            #command-input { grid-column: span 2; font-size: 0.9rem; padding: 10px; }
+            .hud-btn { padding: 10px 12px; font-size: 0.8rem; text-align: center; justify-content: center; display: flex; align-items: center; }
+            #interaction-deck > button:last-child { grid-column: span 2; }
         }
     </style>
 </head>
@@ -314,10 +264,19 @@
             <div style="width: 100%;">
                 <button class="hud-btn" style="width: 100%; margin-bottom: 15px;" onclick="sincronizarCanalAudio()">AUTORIZAR AUDIO</button>
                 
-                <div id="hud-telemetry-display" style="font-size: 0.75rem; color: rgba(0, 242, 254, 0.8); text-align: center; line-height: 1.6; font-family: monospace;">
+                <div id="hud-telemetry-display" style="font-size: 0.75rem; color: rgba(0, 242, 254, 0.8); line-height: 1.4; font-family: monospace;">
                     CHRONO: <span id="telemetry-clock">00:00:00</span><br>
-                    BATTERY: <span id="telemetry-battery">SCANNING...</span><br>
-                    NET LATENCY: <span id="telemetry-ping">0 ms</span><br>
+                    
+                    BATTERY: <span id="telemetry-battery">SCANNING...</span>
+                    <div class="telemetry-bar-container">
+                        <div id="bar-battery" class="telemetry-bar-fill"></div>
+                    </div>
+                    
+                    NET LATENCY: <span id="telemetry-ping">0 ms</span>
+                    <div class="telemetry-bar-container">
+                        <div id="bar-ping" class="telemetry-bar-fill"></div>
+                    </div>
+                    
                     MATRIX HOST: RENDER CLOUD V3
                 </div>
             </div>
@@ -351,7 +310,7 @@
         let reconocimientoVoz;
         let controlVozActivo = false;
 
-        // --- SISTEMA DE TELEMETRÍA EN TIEMPO REAL (PASO 1 HUD) ---
+        // --- TELEMETRÍA EN TIEMPO REAL CON BARRAS DE CARGA ---
         function actualizarRelojHUD() {
             const ahora = new Date();
             const hrs = String(ahora.getHours()).padStart(2, '0');
@@ -368,9 +327,18 @@
                     const cambiarMétricas = () => {
                         const nivel = Math.round(battery.level * 100);
                         const estadoCarga = battery.charging ? " [CHARGING]" : "";
-                        const contenedor = document.getElementById('telemetry-battery');
-                        contenedor.innerText = `${nivel}%${estadoCarga}`;
-                        contenedor.style.color = nivel <= 20 && !battery.charging ? "#ff0055" : "var(--neon-cyan)";
+                        
+                        document.getElementById('telemetry-battery').innerText = `${nivel}%${estadoCarga}`;
+                        const fillBar = document.getElementById('bar-battery');
+                        fillBar.style.width = `${nivel}%`;
+                        
+                        if (nivel <= 20 && !battery.charging) {
+                            fillBar.style.backgroundColor = "#ff0055";
+                            fillBar.style.boxShadow = "0 0 8px #ff0055";
+                        } else {
+                            fillBar.style.backgroundColor = "var(--neon-cyan)";
+                            fillBar.style.boxShadow = "0 0 8px var(--neon-cyan)";
+                        }
                     };
                     cambiarMétricas();
                     battery.addEventListener('levelchange', cambiarMétricas);
@@ -390,14 +358,48 @@
                 await fetch('/chat', { method: 'OPTIONS' }).catch(() => {});
                 const latencia = Date.now() - inicio;
                 document.getElementById('telemetry-ping').innerText = `${latencia} ms`;
+                
+                const fillBar = document.getElementById('bar-ping');
+                // Mapeo visual: 0ms a 500ms escala la barra de 100% a 10%
+                let porcentajeBarra = Math.max(10, Math.min(100, 100 - (latencia / 5)));
+                fillBar.style.width = `${porcentajeBarra}%`;
+                
+                if (latencia > 250) {
+                    fillBar.style.backgroundColor = "#ffaa00";
+                } else if (latencia > 500) {
+                    fillBar.style.backgroundColor = "#ff0055";
+                } else {
+                    fillBar.style.backgroundColor = "var(--neon-cyan)";
+                }
             } catch (err) {
                 document.getElementById('telemetry-ping').innerText = "ERR ms";
+                document.getElementById('bar-ping').style.width = '0%';
             }
         }
         setInterval(calcularLatenciaRed, 5000);
         calcularLatenciaRed();
-        // ---------------------------------------------------------
 
+        // --- EFECTO DE ESCRITURA DE MAINFRAME CYBER-PUNK ---
+        function escribirEnTerminal(texto, tipoClase) {
+            const entradaLog = document.createElement('div');
+            entradaLog.className = `log-entry ${tipoClase}`;
+            terminal.appendChild(entradaLog);
+            
+            let i = 0;
+            const velocidad = 15; // Velocidad de tecleo en milisegundos
+            
+            function teclear() {
+                if (i < texto.length) {
+                    entradaLog.innerHTML += texto.charAt(i);
+                    i++;
+                    terminal.scrollTop = terminal.scrollHeight;
+                    setTimeout(teclear, velocidad);
+                }
+            }
+            teclear();
+        }
+
+        // --- RECONOCIMIENTO VOCAL ---
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             const SpeechEngine = window.SpeechRecognition || window.webkitSpeechRecognition;
             reconocimientoVoz = new SpeechEngine();
@@ -416,9 +418,7 @@
                 desactivarEstadoMic();
             };
 
-            reconocimientoVoz.onend = () => {
-                desactivarEstadoMic();
-            };
+            reconocimientoVoz.onend = () => { desactivarEstadoMic(); };
 
             reconocimientoVoz.onresult = (e) => {
                 const resultadoText = e.results[0][0].transcript;
@@ -426,7 +426,7 @@
                 enviarMensajeConsola();
             };
         } else {
-            logSistema("ADVERTENCIA: Entrada por micro nativo no soportada en este navegador.");
+            logSistema("ADVERTENCIA: Entrada por micro nativo no soportada.");
         }
 
         function sincronizarCanalAudio() {
@@ -437,11 +437,7 @@
 
         function conmutarMicrofono() {
             if (!reconocimientoVoz) return;
-            try {
-                reconocimientoVoz.start();
-            } catch(err) {
-                reconocimientoVoz.stop();
-            }
+            try { reconocimientoVoz.start(); } catch(err) { reconocimientoVoz.stop(); }
         }
 
         function desactivarEstadoMic() {
@@ -453,6 +449,7 @@
             if (e.key === 'Enter') enviarMensajeConsola();
         }
 
+        // --- ENVIAR MENSAJE AL SERVER ---
         async function enviarMensajeConsola() {
             const msg = cmdInput.value.trim();
             if (!msg) return;
@@ -469,17 +466,20 @@
                 });
                 
                 const datos = await respuesta.json();
-                terminal.innerHTML += `<div class="log-entry tercero-resp">[TERCERO]: ${datos.text}</div>`;
-                irAlFondo();
+                
+                // Aplicamos efecto typewriter para Tercero
+                escribirEnTerminal(`[TERCERO]: ${datos.text}`, 'tercero-resp');
 
-                if (datos.audio_file) {
-                    emitirAudioNucleo(`/uploads/responses/${datos.audio_file}`);
+                // CORRECCIÓN: Validar datos.audio_url directamente de FastAPI
+                if (datos.audio_url) {
+                    emitirAudioNucleo(datos.audio_url);
                 }
             } catch (err) {
                 logSistema("Error crítico en envío de paquete de datos.");
             }
         }
 
+        // --- SUBIDA DE ARCHIVOS ---
         async function procesarCargaArchivo() {
             const cargador = document.getElementById('matrix-file-loader');
             if (cargador.files.length === 0) return;
@@ -498,28 +498,23 @@
                 });
                 const datos = await respuesta.json();
                 
-                terminal.innerHTML += `<div class="log-entry system-alert">> [SISTEMA]: Transmisión completa de ${archivo.name}.</div>`;
-                terminal.innerHTML += `<div class="log-entry tercero-resp">[TERCERO]: ${datos.text}</div>`;
-                irAlFondo();
+                logSistema(`Transmisión completa de ${archivo.name}.`);
+                escribirEnTerminal(`[TERCERO]: ${datos.text}`, 'tercero-resp');
 
-                if (datos.audio_file) {
-                    emitirAudioNucleo(`/uploads/responses/${datos.audio_file}`);
+                // CORRECCIÓN: Validar datos.audio_url directamente de FastAPI
+                if (datos.audio_url) {
+                    emitirAudioNucleo(datos.audio_url);
                 }
             } catch (err) {
-                logSistema("Fallo en la carga de archivo binario/PDF.");
+                logSistema("Fallo en la carga de archivo binario.");
             }
         }
 
         function emitirAudioNucleo(url) {
             const streamingAudio = new Audio(`${url}?t=${new Date().getTime()}`);
             
-            streamingAudio.onplay = () => {
-                reactor.classList.add('core-speaking');
-            };
-            
-            streamingAudio.onended = () => {
-                reactor.classList.remove('core-speaking');
-            };
+            streamingAudio.onplay = () => { reactor.classList.add('core-speaking'); };
+            streamingAudio.onended = () => { reactor.classList.remove('core-speaking'); };
 
             streamingAudio.play().catch(err => {
                 logSistema("Salida vocal bloqueada por el navegador. Haga clic en 'AUTORIZAR AUDIO'.");
@@ -532,9 +527,7 @@
             irAlFondo();
         }
 
-        function irAlFondo() {
-            terminal.scrollTop = terminal.scrollHeight;
-        }
+        function irAlFondo() { terminal.scrollTop = terminal.scrollHeight; }
     </script>
 </body>
 </html>
