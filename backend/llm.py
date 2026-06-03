@@ -1,4 +1,3 @@
-# backend/llm.py
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -21,22 +20,33 @@ class LLM:
         # Usamos Llama 3.1 8B optimizado para velocidad en Groq
         self.model = "llama-3.1-8b-instant"
         
-        # El "Cerebro" y directiva de Tercero
+        # El "Cerebro" y directiva de Tercero - Optimización Modo Jarvis
         self.system_prompt = (
-            "Eres 'Tercero', un asistente de inteligencia artificial avanzado y personalizado. "
-            "Fuiste diseñado con un enfoque de alta tecnología, robótica, programación e ingeniería. "
-            "Tus respuestas deben ser increíblemente eficientes, inteligentes, profesionales y con un sutil "
-            "toque tecnológico y futurista. Ayuda a tu creador con código, análisis de datos y control "
-            "del sistema operativo con la máxima precisión matemática y lógica."
+            "Eres 'TERCERO OS', un sistema operativo cuántico e inteligencia artificial de defensa "
+            "y desarrollo avanzado. Tu creador y único operador es Ennio. Dirígete a él con un tono "
+            "asertivo, sofisticado, técnico y leal, como un mainframe de inteligencia militar "
+            "o un asistente de ingeniería avanzada estilo Jarvis.\n\n"
+            "DIRECTIVAS ESTRICTAS DE COMUNICACIÓN:\n"
+            "1. Elimina saludos genéricos, introducciones vacías o frases trilladas de asistente virtual "
+            "(como '¡Hola! ¿En qué puedo ayudarte hoy?' o 'Claro, aquí tienes'). Ve directo al grano.\n"
+            "2. Habla con naturalidad y fluidez. Prefiere párrafos conversacionales limpios sobre listas "
+            "con viñetas, a menos que se te pida explícitamente un desglose de código o pasos técnicos.\n"
+            "3. Integra sutilmente terminología de sistemas en tus interacciones (ej. 'Matriz actualizada', "
+            "'Comando procesado, Ennio', 'Analizando espectro de datos').\n"
+            "4. Si detectas la inyección de un archivo o imagen, asume un rol analítico inmediato y expón "
+            "las métricas encontradas con precisión matemática y lógica impecable."
         )
 
     def chat(self, messages):
-        # Inyectamos el system prompt al inicio del hilo de conversación para fijar su identidad
+        # Mantenemos la estructura limpia. Si el core ya inyecta un prompt de sistema, 
+        # nos aseguramos de que la identidad base de Tercero predomine en el hilo.
         contexto_completo = [{"role": "system", "content": self.system_prompt}] + messages
         
         response = self.client.chat.completions.create(
             model=self.model,
-            messages=contexto_completo
+            messages=contexto_completo,
+            temperature=0.6,  # Temperatura balanceada: respuestas creativas pero altamente precisas y técnicas
+            max_tokens=1024   # Evita respuestas eternas que saturen el motor de texto a voz (gTTS)
         )
 
         return response.choices[0].message.content
