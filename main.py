@@ -7,6 +7,7 @@ import random
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from backend.core import TerceroCore
 
 app = FastAPI()
@@ -22,31 +23,23 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 @app.get("/")
 async def root():
-    return {"message": "Tercero OS Mainframe Online"}
+    # Aquí cargamos la interfaz visual automáticamente
+    return FileResponse("index.html")
 
-# Generador de telemetría optimizado (Cero dependencias externas)
 @app.get("/api/telemetria/sensor/{sensor_type}")
 async def generar_curva_sensor(sensor_type: str, status: str = "NORMAL"):
+    # Generación nativa sin dependencias externas
     puntos = 20
-    s_type = sensor_type.upper()
-    # Generamos los datos con matemática nativa
-    x_vals = [i * (6.28 / 19.0) for i in range(puntos)]
-    
-    if s_type == "MAP":
-        data = [2.5 + math.sin(x) for x in x_vals]
-    elif s_type == "BATTERY":
-        data = [13.8 + (random.uniform(-0.2, 0.2)) for _ in range(puntos)]
+    x = [i * 0.3 for i in range(puntos)]
+    if sensor_type.upper() == "MAP":
+        data = [2.5 + math.sin(val) for val in x]
     else:
-        data = [850 + (math.sin(x) * 50) for x in x_vals]
-        
+        data = [13.8 + (random.random() * 0.1) for _ in range(puntos)]
     return {"dataset": [round(val, 2) for val in data]}
 
 @app.post("/chat")
 async def chat(data: dict):
-    # Aseguramos que el chat siempre devuelva la estructura esperada
-    res = core.chat(data.get("user_id", "Ennio"), data.get("message", ""))
-    return res
+    return core.chat(data.get("user_id", "Ennio"), data.get("message", ""))
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port)
+    uvicorn.run("main:app", host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))
