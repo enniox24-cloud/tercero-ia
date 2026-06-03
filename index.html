@@ -4,63 +4,64 @@
     <meta charset="UTF-8">
     <title>TERCERO OS | MAINFRAME</title>
     <style>
-        body { background: #000; color: #00f2fe; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; }
-        #hud { display: flex; flex-direction: column; height: 100vh; padding: 20px; border: 2px solid #00f2fe; box-shadow: inset 0 0 20px #00f2fe; }
-        #terminal { flex: 1; overflow-y: auto; font-size: 1.1rem; margin-bottom: 20px; text-shadow: 0 0 5px #00f2fe; }
-        .input-area { display: flex; gap: 10px; align-items: center; }
-        input[type="text"] { flex: 1; background: #000; border: 1px solid #00f2fe; color: #fff; padding: 10px; }
-        button { background: #00f2fe; color: #000; font-weight: bold; padding: 10px 15px; cursor: pointer; border: none; }
-        .file-upload { display: none; }
-        .status-bar { border-top: 1px solid #00f2fe; padding-top: 10px; font-size: 0.8rem; text-align: right; }
+        body { background: #000; color: #00f2fe; font-family: 'Courier New', monospace; margin: 0; padding: 20px; }
+        #terminal { height: 70vh; overflow-y: auto; border: 1px solid #00f2fe; padding: 15px; margin-bottom: 10px; }
+        .input-area { display: flex; gap: 10px; }
+        button { background: #00f2fe; color: #000; padding: 10px; cursor: pointer; border: none; }
     </style>
 </head>
 <body>
-    <div id="hud">
-        <div id="terminal">--- SISTEMA TERCERO OS ONLINE ---<br></div>
-        <div class="input-area">
-            <button onclick="iniciarSistema()">AUDIO</button>
-            <button onclick="activarMicro()">🎤</button>
-            <input type="file" id="fileInput" class="file-upload" onchange="subirArchivo()">
-            <button onclick="document.getElementById('fileInput').click()">📁</button>
-            <input type="text" id="msg" placeholder="Comando de sistema..." onkeypress="if(event.key==='Enter') ejecutar()">
-            <button onclick="ejecutar()">EJECUTAR</button>
-        </div>
-        <div class="status-bar">MODO JARVIS ACTIVO | V3.0 | MÚCLEO ESTABLE</div>
+    <div id="terminal">--- SISTEMA TERCERO OS: MODO DIAGNÓSTICO ---<br></div>
+    <div class="input-area">
+        <button onclick="activarMicro()">🎤 MIC</button>
+        <input type="text" id="msg" placeholder="Comando...">
+        <button onclick="ejecutar()">EJECUTAR</button>
+        <input type="file" id="fileInput" onchange="subirArchivo()">
     </div>
     <script>
-        // --- SISTEMA DE AUDIO ---
-        function iniciarSistema() {
-            document.getElementById('terminal').innerHTML += "<p>> Subsistema de audio conectado.</p>";
+        // 1. Diagnóstico de Audio
+        function reproducirAudio(url) {
+            const audio = new Audio(url);
+            audio.play().catch(e => {
+                document.getElementById('terminal').innerHTML += `<p style="color:red">> ERROR AUDIO: ${e.message}</p>`;
+            });
         }
 
-        // --- SISTEMA DE MICRÓFONO ---
+        // 2. Micrófono mejorado
         const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
         rec.lang = 'es-ES';
-        function activarMicro() { rec.start(); }
+        function activarMicro() { 
+            rec.start();
+            document.getElementById('terminal').innerHTML += "<p>> Micrófono escuchando...</p>";
+        }
         rec.onresult = (e) => { 
-            document.getElementById('msg').value = e.results[0][0].transcript;
+            const texto = e.results[0][0].transcript;
+            document.getElementById('msg').value = texto;
             ejecutar();
         };
 
-        // --- SISTEMA DE CHAT ---
+        // 3. Ejecución con manejo de errores
         async function ejecutar() {
             const m = document.getElementById('msg').value;
-            document.getElementById('terminal').innerHTML += `<p style="color:#00f2fe">> ${m}</p>`;
-            const res = await fetch('/chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({user_id: "Ennio", message: m}) });
+            const res = await fetch('/chat', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({user_id: "Ennio", message: m}) 
+            });
             const data = await res.json();
-            document.getElementById('terminal').innerHTML += `<p style="color:#fff">[TERCERO]: ${data.text}</p>`;
-            if(data.audio_url) new Audio(data.audio_url).play();
-            document.getElementById('msg').value = '';
+            document.getElementById('terminal').innerHTML += `<p>> [Tercero]: ${data.text}</p>`;
+            if(data.audio_url) reproducirAudio(data.audio_url);
         }
 
-        // --- SISTEMA DE ARCHIVOS ---
+        // 4. Subida de archivos
         async function subirArchivo() {
             const file = document.getElementById('fileInput').files[0];
             const formData = new FormData();
             formData.append("user_id", "Ennio");
             formData.append("file", file);
-            await fetch('/upload', { method: 'POST', body: formData });
-            document.getElementById('terminal').innerHTML += `<p>> Archivo ${file.name} cargado en matriz.</p>`;
+            const res = await fetch('/upload', { method: 'POST', body: formData });
+            const data = await res.json();
+            document.getElementById('terminal').innerHTML += `<p>> Archivo cargado: ${data.filename}</p>`;
         }
     </script>
 </body>
