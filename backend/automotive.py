@@ -2,7 +2,7 @@ import re
 
 class AutomotiveDiagnostic:
     def __init__(self):
-        # Base de datos local con procedimientos exactos para sensores críticos
+        # Base de conocimiento técnico para diagnóstico con multímetro
         self.knowledge_base = {
             "MAP": {
                 "sensor": "Sensor MAP (Presión Absoluta del Múltiple)",
@@ -16,20 +16,20 @@ class AutomotiveDiagnostic:
             },
             "IAT": {
                 "sensor": "Sensor IAT (Temperatura del Aire de Admisión)",
-                "voltajes": "Alimentación: 5.0 V (Línea de retorno/señal combinada en termistores NTC) | Resistencia típica a 25°C: ~10k a 12k Ohms",
+                "voltajes": "Alimentación: 5.0 V (Línea de retorno de señal) | Resistencia típica a 25°C: ~10k a 12k Ohms",
                 "procedimiento": [
-                    "1. Inspección Física: Desmonta el sensor y verifica que el termistor (la punta plástica) no esté impregnado de aceite o carbón.",
-                    "2. Prueba de Voltaje de Referencia: Desconecta el sensor, pon la llave en ON y mide el conector del arnés. Debes registrar 5V de referencia enviados por la computadora.",
-                    "3. Prueba de Resistencia (Multímetro en Ohms): Mide los dos pines del sensor desconectado. Aplica calor suave (con un secador o tu mano) y verifica que la resistencia baje fluidamente (comportamiento NTC). Si se queda abierta (OL) o en corto, reemplaza el sensor."
+                    "1. Inspección Física: Desmonta el sensor y verifica que el termistor no esté impregnado de aceite, carbón o suciedad.",
+                    "2. Prueba de Voltaje de Referencia: Desconecta el sensor, pon la llave en ON y mide el conector del arnés. Debes registrar 5V de referencia enviados por la PCM.",
+                    "3. Prueba de Resistencia (Multímetro en Ohms): Mide los dos pines del sensor desconectado. Aplica calor suave (con tus manos o un secador) y verifica que la resistencia baje de forma fluida (comportamiento NTC). Si marca circuito abierto (OL), reemplaza el sensor."
                 ]
             }
         }
 
     def analizar_consulta(self, mensaje: str) -> str:
-        """Escanea el mensaje del usuario buscando códigos OBD-II o menciones a sensores."""
+        """Escanea la consulta buscando códigos de error OBD-II o menciones a sensores."""
         mensaje_upper = mensaje.upper()
         
-        # Diccionario de mapeo de códigos OBD-II estándar a nuestros componentes
+        # Mapeo de códigos OBD-II estándar a sus respectivos componentes
         codigos_obd = {
             r"\bP0107\b|\bP0108\b|\bP0109\b": "MAP",
             r"\bP0111\b|\bP0112\b|\bP0113\b": "IAT"
@@ -37,32 +37,30 @@ class AutomotiveDiagnostic:
         
         componente_detectado = None
         
-        # 1. Buscar por códigos de falla OBD-II
+        # 1. Búsqueda por código de falla exacto
         for patron, comp in codigos_obd.items():
             if re.search(patron, mensaje_upper):
                 componente_detectado = comp
                 break
                 
-        # 2. Si no hay códigos, buscar por nombre directo del sensor
+        # 2. Búsqueda por nombre común del sensor si no hay código
         if not componente_detectado:
             if "MAP" in mensaje_upper or "PRESION ABSOLUTA" in mensaje_upper:
                 componente_detectado = "MAP"
             elif "IAT" in mensaje_upper or "TEMPERATURA DE ADMISION" in mensaje_upper or "TEMPERATURA DEL AIRE" in mensaje_upper:
                 componente_detectado = "IAT"
                 
-        # 3. Si interceptamos una falla, estructuramos la inyección de datos mecánicos
+        # 3. Si se intercepta el componente, se genera la inyección técnica
         if componente_detectado:
             datos = self.knowledge_base[componente_detectado]
             pasos_formateados = "\n".join(datos["procedimiento"])
             
-            prompt_inyectado = (
+            return (
                 f"\n\n[SISTEMA - PROTOCOLO DE DIAGNÓSTICO AUTOMOTRIZ ACTIVO]:\n"
-                f"El operador está reportando una anomalía o código de error relacionado con el {datos['sensor']}.\n"
-                f"Métricas técnicas de referencia del componente:\n- {datos['voltajes']}\n\n"
-                f"Flujo de inspección y comprobación con multímetro requerido:\n{pasos_formateados}\n\n"
-                f"Instrucción para Tercero OS: Integra esta guía técnica y explícale a Ennio de forma directa "
-                f"y con autoridad mecatrónica cómo ejecutar el diagnóstico en el vehículo paso a paso."
+                f"El operador reporta anomalías en el {datos['sensor']}.\n"
+                f"Métricas nominales de referencia:\n- {datos['voltajes']}\n\n"
+                f"Flujo de comprobación física con multímetro:\n{pasos_formateados}\n\n"
+                f"Instrucción: Integra estos datos y guía a Ennio con autoridad técnica y de forma directa paso a paso."
             )
-            return prompt_inyectado
             
         return ""
