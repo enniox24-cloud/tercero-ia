@@ -17,7 +17,7 @@ class LLM:
             api_key=api_key
         )
 
-        # CONFIGURACIÓN ESTABLE REVERTIADA: Llama 3.1 8B de texto puro.
+        # CONFIGURACIÓN ESTABLE REVERTIDA: Llama 3.1 8B de texto puro.
         # Este modelo está activo, verificado en Groq y no genera errores de conexión.
         self.model = "llama-3.1-8b-instant"
         
@@ -42,11 +42,12 @@ class LLM:
         # Mantenemos la estructura limpia asegurando la identidad base de Tercero en el hilo
         contexto_completo = [{"role": "system", "content": self.system_prompt}] + messages
         
-        response = self.client.client.chat.completions.create(
+        # CORREGIDO: Se eliminó el '.client' duplicado que causaba el error de atributo
+        response = self.client.chat.completions.create(
             model=self.model,
             messages=contexto_completo,
-            temperature=0.6,  # Temperatura balanceada para respuestas precisas y naturales
-            max_tokens=1024   # Evita respuestas eternas que saturen el motor de voz
+            temperature=0.6,
+            max_tokens=1024
         )
 
         return response.choices[0].message.content
