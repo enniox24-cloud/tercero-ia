@@ -127,6 +127,44 @@ def hardware_control(query: str) -> str:
         return "Módulo de puente de hardware offline. El enlace físico con los relés y componentes no se ha detectado en esta instancia."
 
 
+def get_weather(query: str) -> str:
+    """
+    Módulo de telemetría climática automatizado. Conecta con Open-Meteo API
+    para obtener datos en tiempo real de Maracaibo de forma limpia.
+    """
+    # Coordenadas geográficas por defecto de Maracaibo, Venezuela
+    lat, lon = "10.6666", "-71.6124"
+    url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true"
+    
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=5) as response:
+            data = json.loads(response.read().decode())
+            current = data.get("current_weather", {})
+            
+            temp = current.get("temperature", "N/D")
+            viento = current.get("windspeed", "N/D")
+            time_obs = current.get("time", "N/D")
+            
+            # Mapeo básico de códigos meteorológicos de la WMO
+            wmo_code = current.get("weathercode", 0)
+            estado = "Cielo despejado"
+            if wmo_code in [1, 2, 3]: estado = "Parcialmente nublado"
+            elif wmo_code in [45, 48]: estado = "Niebla atmosférica"
+            elif wmo_code in [51, 53, 55, 61, 63, 65]: estado = "Precipitaciones/Lluvia activa"
+            elif wmo_code in [80, 81, 82]: estado = "Chubascos intermitentes"
+            elif wmo_code in [95, 96, 99]: estado = "Tormenta eléctrica en desarrollo"
+
+            return (
+                f"Métricas climáticas de Maracaibo actualizadas:\n"
+                f"- Temperatura Ambiente: {temp}°C\n"
+                f"- Estado Atmosférico: {estado}\n"
+                f"- Velocidad del Viento: {viento} km/h"
+            )
+    except Exception as e:
+        return f"No se pudo establecer conexión con el satélite climático. Error en enlace: {str(e)}"
+
+
 def run_tool(tool_name: str, query: str) -> str:
     """
     Enrutador maestro del Mainframe. Conecta las decisiones del LLM con las funciones del sistema.
@@ -135,7 +173,8 @@ def run_tool(tool_name: str, query: str) -> str:
         "open_app": open_app,
         "system_status": system_status,
         "system_purge": system_purge,
-        "hardware_control": hardware_control
+        "hardware_control": hardware_control,
+        "get_weather": get_weather  # Registro oficial de la nueva ranura de expansión climática
     }
     
     if tool_name in mapa_herramientas:
