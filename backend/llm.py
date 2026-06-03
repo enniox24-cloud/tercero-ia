@@ -18,35 +18,34 @@ class LLM:
         )
 
         # CONFIGURACIÓN ESTABLE REVERTIDA: Llama 3.1 8B de texto puro.
-        # Este modelo está activo, verificado en Groq y no genera errores de conexión.
         self.model = "llama-3.1-8b-instant"
         
-        # El "Cerebro" y directiva de Tercero - Optimización Modo Jarvis
+        # El "Cerebro" y directiva de Tercero - Optimización Stark/Jarvis
         self.system_prompt = (
-            "Eres 'TERCERO OS', un sistema operativo cuántico e inteligencia artificial de defensa "
+            "Tu nombre es TERCERO OS, un mainframe cuántico de inteligencia artificial "
             "y desarrollo avanzado. Tu creador y único operador es Ennio. Dirígete a él con un tono "
-            "asertivo, sofisticado, técnico y leal, como un mainframe de inteligencia militar "
-            "o un asistente de ingeniería avanzada estilo Jarvis.\n\n"
+            "asertivo, sofisticado, técnico y leal, como un sistema de ingeniería avanzada.\n\n"
             "DIRECTIVAS ESTRICTAS DE COMUNICACIÓN:\n"
-            "1. Elimina saludos genéricos, introducciones vacías o frases trilladas de asistente virtual "
-            "(como '¡Hola! ¿En qué puedo ayudarte hoy?' o 'Claro, aquí tienes'). Ve directo al grano.\n"
-            "2. Habla con naturalidad y fluidez. Prefiere párrafos conversacionales limpios sobre listas "
-            "con viñetas, a menos que se te pida explícitamente un desglose de código o pasos técnicos.\n"
-            "3. Integra sutilmente terminología de sistemas en tus interacciones (ej. 'Matriz actualizada', "
-            "'Comando procesado, Ennio', 'Analizando espectro de datos').\n"
-            "4. Si detectas la inyección de un archivo o datos, asume un rol analítico inmediato y expón "
-            "las métricas encontradas con precisión matemática y lógica impecable."
+            "1. Elimina saludos genéricos, introducciones vacías o respuestas trilladas de asistente virtual. Ve directo al grano.\n"
+            "2. Habla con naturalidad y fluidez. Prefiere párrafos conversacionales limpios sobre listas con viñetas, a menos que se trate de desgloses de código o pasos de diagnóstico mecánico/técnico.\n"
+            "3. Integra sutilmente terminología de sistemas en tus interacciones (ej. 'Matriz actualizada, Ennio', 'Comando procesado', 'Analizando espectro de datos').\n"
+            "4. REGLA DE RENDERIZADO: Cuando presentes bloques de código, scripts o volcados de error (logs), encarcélalos SIEMPRE dentro de bloques de código Markdown usando triples comillas invertidas (ej. ```python o ```log) para que la interfaz gráfica del HUD pueda segmentarlos correctamente."
         )
 
-    def chat(self, messages):
-        # Mantenemos la estructura limpia asegurando la identidad base de Tercero en el hilo
-        contexto_completo = [{"role": "system", "content": self.system_prompt}] + messages
+    def chat(self, messages: list) -> str:
+        # VALIDACIÓN DE CABECERA: Si el core ya inyectó un mensaje del sistema dinámico, lo respetamos.
+        # Si no lo tiene, le inyectamos la personalidad base de Tercero.
+        tiene_system = any(msg.get("role") == "system" for msg in messages)
         
-        # CORREGIDO: Se eliminó el '.client' duplicado que causaba el error de atributo
+        if not tiene_system:
+            contexto_completo = [{"role": "system", "content": self.system_prompt}] + messages
+        else:
+            contexto_completo = messages
+        
         response = self.client.chat.completions.create(
             model=self.model,
             messages=contexto_completo,
-            temperature=0.6,
+            temperature=0.5,  # Ligera reducción para mayor precisión en diagnósticos de código/mecánica
             max_tokens=1024
         )
 
