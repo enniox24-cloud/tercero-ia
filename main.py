@@ -3,7 +3,8 @@ import shutil
 import uvicorn
 import sqlite3
 import json
-from fastapi import FastAPI, UploadFile, File, Form
+import numpy as np
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -87,6 +88,56 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 @app.get("/")
 async def root():
     return FileResponse("index.html")
+
+# ========================================================
+# ENDPOINTS ADICIONALES DE TELEMETRÍA Y HISTORIAL (HUD V3)
+# ========================================================
+@app.get("/api/historial")
+async def obtener_historial_sesion(user_id: str = "ennio"):
+    """Carga de forma automatizada las transmisiones guardadas para la persistencia del HUD"""
+    logs = obtener_historial_memoria(user_id, limite=15)
+    return {"status": "SUCCESS", "data": logs}
+
+@app.get("/api/telemetria/sensor/{sensor_type}")
+async def generar_curva_sensor(sensor_type: str, status: str = "NORMAL"):
+    """
+    Genera matrices de ondas de ingeniería mecatrónica para el osciloscopio del HUD.
+    Simula curvas de comportamiento físico de sensores automotrices.
+    """
+    puntos = 20
+    x = np.linspace(0, 4 * np.pi, puntos)
+    sensor_type = sensor_type.upper()
+    
+    if sensor_type == "MAP":
+        # Sensor de Presión Absoluta del Múltiple (Voltaje típico de 0 a 5V según el vacío del motor)
+        base_signal = 4.2 - (3.2 * (np.sin(x / 2) ** 2))
+        if status == "FALLA":
+            # Simula una fuga de vacío en la admisión o cable defectuoso (señal errática con ruido)
+            base_signal += np.random.normal(0, 0.7, puntos)
+            
+    elif sensor_type == "IAT":
+        # Sensor de Temperatura del Aire de Admisión (Curva NTC - Coeficiente de Temperatura Negativo)
+        base_signal = 3.8 - (0.12 * x) + np.sin(x) * 0.15
+        if status == "FALLA":
+            # Simula un falso contacto eléctrico o sulfatación en el conector (cortes limpios de tensión)
+            base_signal = np.array([4.8 if i % 5 == 0 else val for i, val in enumerate(base_signal)])
+            
+    elif sensor_type == "BATTERY":
+        # Voltaje del alternador regulado (Simula la carga estable entre ~13.6V y 14.4V)
+        base_signal = 13.8 + (np.sin(x * 2) * 0.25)
+        if status == "FALLA":
+            # Caída drástica por diodo dañado o alternador deficiente
+            base_signal -= np.random.uniform(1.8, 3.2, puntos)
+            
+    else:
+        raise HTTPException(status_code=400, detail="Módulo de sensor no configurado en el núcleo.")
+
+    return {
+        "sensor": sensor_type,
+        "status": status,
+        "dataset": base_signal.round(2).tolist()
+    }
+# ========================================================
 
 # Endpoint optimizado para el Chat del HUD con prevención de duplicación
 @app.post("/chat")
