@@ -17,7 +17,7 @@ class LLM:
             api_key=api_key
         )
 
-        # CONFIGURACIÓN ESTABLE REVERTIDA: Llama 3.1 8B de texto puro.
+        # CONFIGURACIÓN ESTABLE: Llama 3.1 8B de texto puro en Groq
         self.model = "llama-3.1-8b-instant"
         
         # El "Cerebro" y directiva de Tercero - Optimización Stark/Jarvis
@@ -45,7 +45,7 @@ class LLM:
         response = self.client.chat.completions.create(
             model=self.model,
             messages=contexto_completo,
-            temperature=0.5,  # Ligera reducción para mayor precisión en diagnósticos de código/mecánica
+            temperature=0.5,  # Temperatura óptima para precisión técnica
             max_tokens=1024
         )
 
