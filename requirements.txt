@@ -12,3 +12,4 @@ SpeechRecognition
 gTTS
 edge-tts
 Flask==3.0.3
+a2wsgi
