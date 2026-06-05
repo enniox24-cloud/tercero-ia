@@ -193,13 +193,13 @@
         });
 
         // ========================================================
-        // ENLACE CUÁNTICO SSE: RECEPTOR DE LOGS EN VIVO DEL SERVIDOR
+        // ENLACE CUÁNTICO SSE: RECEPTOR DE LOGS EN VIVO (CORREGIDO)
         // ========================================================
-        const telemetrySource = new EventSource('/stream-telemetry');
+        const telemetrySource = new EventSource('/stream_telemetria');
 
         telemetrySource.onmessage = function(event) {
             const data = JSON.parse(event.data);
-            imprimirLog(data.origen, data.texto);
+            imprimirLog(data.origen, data.mensaje);
         };
 
         telemetrySource.onerror = function() {
@@ -227,13 +227,13 @@
         }
 
         // ========================================================
-        // ENVÍO DE COMANDOS CON DETENCIÓN ASÍNCRONA DE AUDIO
+        // ENVÍO DE COMANDOS CON DETENCIÓN ASÍNCRONA (CORREGIDO)
         // ========================================================
         async function enviarComando(textoDictado = null) {
             const cmd = textoDictado ? textoDictado.trim() : inputCommand.value.trim();
             if (!cmd) return;
 
-            // PARADA DE EMERGENCIA ASÍNCRONA: Interrupción forzada si el sistema está hablando
+            // PARADA DE EMERGENCIA ASÍNCRONA
             if (!audioPlayer.paused) {
                 audioPlayer.pause();
                 audioPlayer.currentTime = 0;
@@ -246,7 +246,7 @@
             imprimirLog('USER', cmd);
 
             try {
-                const response = await fetch('/chat', {
+                const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_id: 'ennio', message: cmd })
@@ -256,8 +256,8 @@
                 const textoFinal = procesarComandosFronteEnd(data.text);
                 imprimirLog('TERCERO', textoFinal);
 
-                if (data.audio_url) {
-                    audioPlayer.src = data.audio_url;
+                if (data.audio_file) {
+                    audioPlayer.src = "/frontend/static/" + data.audio_file;
                     audioPlayer.play().catch(e => console.log("Audio play deferred"));
                 }
             } catch (err) {
@@ -289,8 +289,8 @@
                 const textoFinal = procesarComandosFronteEnd(data.text);
                 imprimirLog('TERCERO', textoFinal);
 
-                if (data.audio_url) {
-                    audioPlayer.src = data.audio_url;
+                if (data.audio_file) {
+                    audioPlayer.src = "/frontend/static/" + data.audio_file;
                     audioPlayer.play().catch(e => console.log("Audio play deferred"));
                 }
             } catch (err) {
@@ -324,7 +324,7 @@
         }
 
         // ========================================================
-        // ESCUCHA CONTINUA INTELIGENTE CON CONTROL DE INTERRUPCIÓN
+        // ESCUCHA CONTINUA INTELIGENTE
         // ========================================================
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
