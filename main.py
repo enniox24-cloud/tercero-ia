@@ -5,14 +5,15 @@ import json
 import queue
 
 from flask import Flask, render_template, request, jsonify, Response
+from a2wsgi import WSGImiddleware  # <-- EL PUENTE INTERNO CRÍTICO
 
 # IMPORTACIÓN DE LOS COMPONENTES PRINCIPALES DEL MAINFRAME
 from backend.core import TerceroCore
 from backend.plugins.environment import EnvironmentPlugin
 
-app = Flask(__name__, template_folder="frontend/templates", static_folder="frontend/static")
+flask_app = Flask(__name__, template_folder="frontend/templates", static_folder="frontend/static")
 
-# Inicialización segura de componentes
+# Inicialización segura de componentes del backend
 core = TerceroCore()
 env_monitor = EnvironmentPlugin()
 clientes_sse = []
@@ -35,8 +36,6 @@ core.enviar_log_external = enviar_log_al_hud
 def daemon_tareas_segundo_plano():
     """Hilo perpetuo de fondo. Monitorea el tiempo y el entorno de Maracaibo."""
     print("[SISTEMA]: Demonio de fondo activo en canal asíncrono.")
-    
-    # Pausa de seguridad de 10 segundos para dejar que Render asigne los puertos con calma
     time.sleep(10)
     ciclo = 0
     
@@ -47,7 +46,6 @@ def daemon_tareas_segundo_plano():
                 enviar_log_al_hud("SYSTEM", "Secuencia de inicio matutina activa. Buenos días, operador.")
                 time.sleep(60)
                 
-            # Escaneo cada 30 ciclos (5 minutos)
             if ciclo % 30 == 0:
                 telemetria_clima = env_monitor.obtener_telemetria_maracaibo()
                 
@@ -70,11 +68,11 @@ def daemon_tareas_segundo_plano():
 hilo_demonio = threading.Thread(target=daemon_tareas_segundo_plano, daemon=True)
 hilo_demonio.start()
 
-@app.route('/')
+@flask_app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/api/chat', methods=['POST'])
+@flask_app.route('/api/chat', methods=['POST'])
 def api_chat():
     try:
         data = request.json or {}
@@ -89,7 +87,7 @@ def api_chat():
     except Exception as e:
         return jsonify({"error": f"Fallo en comunicación: {str(e)}"}), 500
 
-@app.route('/stream_telemetria')
+@flask_app.route('/stream_telemetria')
 def stream_telemetria():
     def generar_flujo():
         q = queue.Queue()
@@ -105,9 +103,14 @@ def stream_telemetria():
             
     return Response(generar_flujo(), mimetype="text/event-stream")
 
-# CREAMOS UN ALIAS DE APLICACIÓN ASGI PARA ENGAÑAR Y DETENER LOS ERRORES DE UVICORN EN RENDER
-asgi_app = app
+# =====================================================================
+# EL TRUCO MAESTRO: CONVERTIR FLASK (WSGI) A INTERFAZ ASGI PARA UVICORN
+# =====================================================================
+# Render busca un objeto ejecutable llamado "app". Al envolverlo con 
+# WSGImiddleware, Uvicorn lo procesará perfectamente sin crasheos.
+app = WSGImiddleware(flask_app)
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    # Para ejecución local tradicional
+    flask_app.run(host='0.0.0.0', port=port, debug=False)
