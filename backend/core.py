@@ -7,19 +7,19 @@ import base64
 from backend.llm import LLM
 from backend.memory import MemoryManager
 from backend.plugins.voice import VoicePlugin
+from backend.plugins.simulator import AlphaSimulator  # <-- REPARADO: Importación limpia sin el ".py"
 
 class TerceroCore:
     def __init__(self):
         self.llm = LLM()
         self.memory = MemoryManager()
         self.voice = VoicePlugin()
+        self.simulator = AlphaSimulator()
         self.db_path = "tercero_memory.db"
         self.files_dir = os.path.join(os.getcwd(), "uploads", "files")
         
-        # Atributo dinámico para el canal cuántico SSE (inyectado desde app.py)
         self.enviar_log_external = None
         
-        # PROMPTS MAESTROS DE LOS AGENTES ESPECIALISTAS
         self.prompt_alpha = (
             "Eres el Agente ALPHA, el núcleo de ingeniería avanzada, cálculo y mecatrónica de Tercero OS. "
             "Tu especialidad es el análisis de firmware, electrónica de control, lógica de programación (Python/C++), "
@@ -39,7 +39,6 @@ class TerceroCore:
         )
 
     def _log_hud(self, origen: str, mensaje: str):
-        """Dispara de forma segura el log de telemetría si el canal SSE está activo."""
         if self.enviar_log_external:
             self.enviar_log_external(origen, mensaje)
 
@@ -68,7 +67,6 @@ class TerceroCore:
             return ""
 
     def _analizar_datos_obd2(self, contenido_texto: str) -> str:
-        """Sub-módulo de pre-diagnóstico automotriz predictivo OBD-II."""
         alertas = []
         codigos_dtc = re.findall(r'\b[PBUC][0-9]{4}\b', contenido_texto.upper())
         
@@ -85,7 +83,6 @@ class TerceroCore:
         return ""
 
     def _enrutar_agente_heuristico(self, mensaje_usuario: str, contexto_memoria: str) -> str:
-        """Motor de Enrutamiento V9.7: Balanceo de carga cognitivo."""
         msg_lower = mensaje_usuario.lower()
         ctx_lower = contexto_memoria.lower()
         
@@ -111,11 +108,8 @@ class TerceroCore:
         elif score_bravo > score_alpha:
             self._log_hud("SYSTEM", "[NÚCLEO BRAVO ACTIVADO]: Desplegando protocolos de automatización de entorno y gestión.")
             
-            # --- INTERCEPCIÓN FINANCIERA BAJO DEMANDA ---
-            # Si detectamos números y palabras clave de negocio, inyectamos la simulación matemática en las directivas de BRAVO
             analisis_financiero = ""
             if any(x in msg_lower for x in ["libras", "flete", "unidades"]) and "import" in msg_lower:
-                # Extracción rápida por fallback o heurística de números para la simulación
                 numeros = [float(s) for s in re.findall(r'-?\d+\.?\d*', msg_lower)]
                 if len(numeros) >= 2:
                     datos_mock = {"costo_origen": numeros[0], "peso_libras": numeros[1], "unidades": numeros[2] if len(numeros) > 2 else 10}
@@ -130,7 +124,6 @@ class TerceroCore:
             if analisis_financiero:
                 prompt_final_bravo += f"\n\n{analisis_financiero}\nUtiliza estos datos procesados para estructurar tu respuesta de negocio."
             return prompt_final_bravo
-            # ---------------------------------------------
         else:
             self._log_hud("SYSTEM", "[CORE MAINFRAME]: Carga equilibrada. Ejecutando enrutamiento conversacional estándar.")
             return f"Eres Tercero OS, un mainframe de inteligencia artificial avanzada con protocolo Jarvis integrado. Asiste al operador de forma clara y óptima. Variables de entorno: {contexto_memoria}."
