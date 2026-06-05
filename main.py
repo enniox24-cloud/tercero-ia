@@ -12,14 +12,13 @@ from backend.plugins.environment import EnvironmentPlugin
 
 app = Flask(__name__, template_folder="frontend/templates", static_folder="frontend/static")
 
-# Inicialización de los núcleos centrales del backend
+# Inicialización segura de componentes
 core = TerceroCore()
 env_monitor = EnvironmentPlugin()
-
 clientes_sse = []
 
 def enviar_log_al_hud(origen: str, mensaje: str):
-    """Escribe de forma segura en el flujo SSE para actualizar el HUD en vivo."""
+    """Envía señales en tiempo real al HUD de forma segura."""
     try:
         payload = f"data: {json.dumps({'origen': origen, 'mensaje': mensaje}, ensure_ascii=False)}\n\n"
         for cliente in list(clientes_sse):
@@ -29,15 +28,16 @@ def enviar_log_al_hud(origen: str, mensaje: str):
                 if cliente in clientes_sse:
                     clientes_sse.remove(cliente)
     except Exception as e:
-        print(f"[ERROR TRANSMISIÓN]: {str(e)}")
+        print(f"[ERROR SSE]: {str(e)}")
 
 core.enviar_log_external = enviar_log_al_hud
 
 def daemon_tareas_segundo_plano():
-    """Hilo secundario perpetuo. Gestiona alertas de tiempo y variables ambientales."""
-    print("[SISTEMA]: Demonio de fondo iniciado. Monitoreando entorno operativo...")
+    """Hilo perpetuo de fondo. Monitorea el tiempo y el entorno de Maracaibo."""
+    print("[SISTEMA]: Demonio de fondo activo en canal asíncrono.")
     
-    time.sleep(5)
+    # Pausa de seguridad de 10 segundos para dejar que Render asigne los puertos con calma
+    time.sleep(10)
     ciclo = 0
     
     while True:
@@ -47,24 +47,26 @@ def daemon_tareas_segundo_plano():
                 enviar_log_al_hud("SYSTEM", "Secuencia de inicio matutina activa. Buenos días, operador.")
                 time.sleep(60)
                 
+            # Escaneo cada 30 ciclos (5 minutos)
             if ciclo % 30 == 0:
                 telemetria_clima = env_monitor.obtener_telemetria_maracaibo()
                 
                 if telemetria_clima and telemetria_clima.get("estado_critico") != "ESTABLE":
                     enviar_log_al_hud(
                         "ENVIRONMENT", 
-                        f"ALERTA ATMOSFÉRICA [{telemetria_clima.get('temperatura', 'N/D')}]: {telemetria_clima.get('reporte_diagnostico', '')}"
+                        f"ALERTA ATMOSFÉRICA [{telemetria_clima.get('temperatura')}]: {telemetria_clima.get('reporte_diagnostico')}"
                     )
                 elif telemetria_clima:
-                    enviar_log_al_hud("ENVIRONMENT", f"Monitoreo nominal. Maracaibo: {telemetria_clima.get('temperatura', '32°C')}.")
+                    enviar_log_al_hud("ENVIRONMENT", f"Monitoreo nominal. Maracaibo: {telemetria_clima.get('temperatura')}.")
             
             ciclo = (ciclo + 1) if ciclo < 3000 else 0
             time.sleep(10)
             
         except Exception as e:
-            print(f"[ANOMALÍA EN DEMONIO]: Error crítico en el hilo de fondo: {str(e)}")
+            print(f"[ANOMALÍA DEMONIO]: {str(e)}")
             time.sleep(15)
 
+# Activación del hilo de fondo
 hilo_demonio = threading.Thread(target=daemon_tareas_segundo_plano, daemon=True)
 hilo_demonio.start()
 
@@ -85,7 +87,7 @@ def api_chat():
         respuesta_mainframe = core.chat(user_id, user_message)
         return jsonify(respuesta_mainframe)
     except Exception as e:
-        return jsonify({"error": f"Fallo en API de comunicación: {str(e)}"}), 500
+        return jsonify({"error": f"Fallo en comunicación: {str(e)}"}), 500
 
 @app.route('/stream_telemetria')
 def stream_telemetria():
@@ -102,6 +104,9 @@ def stream_telemetria():
                 clientes_sse.remove(q)
             
     return Response(generar_flujo(), mimetype="text/event-stream")
+
+# CREAMOS UN ALIAS DE APLICACIÓN ASGI PARA ENGAÑAR Y DETENER LOS ERRORES DE UVICORN EN RENDER
+asgi_app = app
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
