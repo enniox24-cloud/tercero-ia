@@ -5,7 +5,6 @@ import os
 import sqlite3
 from backend.llm import LLM
 from backend.memory import MemoryManager
-from backend.tools import run_tool
 from backend.plugins.voice import VoicePlugin
 
 class TerceroCore:
@@ -58,7 +57,8 @@ class TerceroCore:
                     if ext in ['.txt', '.py', '.js', '.json', '.html', '.css', '.md', '.log']:
                         try:
                             with open(ruta_completa, 'r', encoding='utf-8', errors='ignore') as f:
-                                contenido_extraido = f.read(20000) # Expandido a 20k caracteres para reportes largos
+                                # Expandido a 25k caracteres para reportes y códigos masivos estilo Jarvis V7
+                                contenido_extraido = f.read(25000) 
                             
                             # Si detectamos un archivo .log o rastros de errores, encendemos las alertas de diagnóstico
                             if ext == '.log' or any(err in contenido_extraido for err in ['Traceback', 'Error', 'Exception', 'FAIL']):
@@ -67,11 +67,11 @@ class TerceroCore:
                             contenido_extraido = f"[Fallo al leer la matriz de texto: {str(e)}]"
                             
                     elif ext == '.pdf':
-                        contenido_extraido = f"[Documento PDF detectado en el Mainframe: '{nombre_archivo}'. Flujo de datos indexado listo para escaneo]."
+                        contenido_extraido = f"[Documento PDF detectado en el Mainframe: '{nombre_archivo}']. Flujo de datos indexado listo para escaneo]."
                     else:
                         contenido_extraido = f"[Archivo binario/Imagen detectado en el Mainframe: '{nombre_archivo}']."
 
-            # 2. Configuración de directrices del sistema de Tercero OS
+            # 2. Configuración de directrices del sistema de Tercero OS V7
             system_content = f"Eres Tercero OS, un mainframe de inteligencia avanzada. Información de usuario: {memory}. {self.llm.system_prompt}."
             
             if contenido_extraido:
@@ -88,20 +88,6 @@ class TerceroCore:
             # Compilación final del paquete de mensajes
             messages = [system_message] + history + [{"role": "user", "content": message}]
             answer = self.llm.chat(messages)
-
-            # PROCESADOR DE COMANDOS (TOOLS)
-            try:
-                match = re.search(r"\{.*\}", answer, re.DOTALL)
-                if match:
-                    parsed = json.loads(match.group(0))
-                    if "tool" in parsed:
-                        res = run_tool(parsed["tool"], parsed.get("query", ""))
-                        answer = self.llm.chat([
-                            {"role": "system", "content": f"Resultado de herramienta: {res}. Explícalo al usuario de manera asertiva."},
-                            {"role": "user", "content": message}
-                        ])
-            except Exception:
-                pass
 
             # Generamos el archivo de audio de salida de forma limpia
             audio_filename = f"response_{int(time.time())}.mp3"
