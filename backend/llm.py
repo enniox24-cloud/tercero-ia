@@ -17,10 +17,10 @@ class LLM:
             api_key=api_key
         )
 
-        # EVOLUCIÓN V8.0: Modelo Multimodal con capacidad de visión y análisis de imágenes
-        self.model = "llama-3.2-11b-vision-preview"
+        # AJUSTE CRÍTICO DE ESTABILIDAD V8.1: Modelo Multimodal Masivo de Producción Activa en Groq
+        self.model = "llama-3.2-90b-vision-preview"
         
-        # El "Cerebro" Avanzado Modo Jarvis V8 - Instrucciones para el manejo de herramientas en el Frontend
+        # El "Cerebro" Avanzado Modo Jarvis V8 - Estabilidad y Control de Automatizaciones
         self.system_prompt = (
             "Eres 'TERCERO OS', un sistema operativo cuántico e inteligencia artificial de defensa "
             "y desarrollo avanzado. Tu creador y único operador es Ennio. Dirígete a él con un tono "
@@ -46,7 +46,7 @@ class LLM:
         response = self.client.chat.completions.create(
             model=self.model,
             messages=contexto_completo,
-            temperature=0.4,  # Menor temperatura para asegurar la precisión matemática y consistencia en comandos
+            temperature=0.4,  # Estabilidad para análisis lógicos y matemáticos sin alucinaciones
             max_tokens=1500
         )
 
