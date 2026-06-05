@@ -25,7 +25,8 @@ class TerceroCore:
             "Tu especialidad es el análisis de firmware, electrónica de control, lógica de programación (Python/C++), "
             "cálculo matemático de precisión y diagnóstico automotriz de alto nivel. Cuando el operador te consulte "
             "o envíe un archivo sobre estos temas, responde con el mayor rigor técnico posible, desglosando ecuaciones, "
-            "algoritmos o flujos de señales paso a paso."
+            "algoritmos o flujos de señales paso a paso. Tienes acceso implícito a las especificaciones de la Jeep Grand Cherokee "
+            "2005 WK 4.7L V8 con acelerador mecánico por guaya."
         )
         
         self.prompt_bravo = (
@@ -65,17 +66,34 @@ class TerceroCore:
             print(f"[ERROR BINARIO]: Fallo al codificar imagen: {str(e)}")
             return ""
 
+    def _analizar_datos_obd2(self, contenido_texto: str) -> str:
+        """Sub-módulo táctico: Escanea el archivo en busca de códigos de falla o lecturas anómalas de sensores."""
+        alertas = []
+        # Patrón para capturar códigos de falla estándar (P0107, P0113, etc.)
+        codigos_dtc = re.findall(r'\b[PBUC][0-9]{4}\b', contenido_texto.upper())
+        
+        if codigos_dtc:
+            alertas.append(f"Detectados Códigos de Falla Activos (DTC): {', '.join(set(codigos_dtc))}")
+        
+        # Escaneo heurístico rápido de flujos críticos comunes de sensores (MAP, IAT, Voltaje)
+        if "map" in contenido_texto.lower() or "manifold" in contenido_texto.lower():
+            alertas.append("Muestreo de presión absoluta del múltiple (MAP) detectado en el flujo de datos.")
+        if "iat" in contenido_texto.lower() or "intake" in contenido_texto.lower():
+            alertas.append("Muestreo de temperatura del aire de admisión (IAT) localizado.")
+            
+        if alertas:
+            return "\n[SISTEMA DE PRE-DIAGNÓSTICO AUTOMOTRIZ OBD-II]:\n* " + "\n* ".join(alertas)
+        return ""
+
     def _enrutar_agente_heuristico(self, mensaje_usuario: str, contexto_memoria: str) -> str:
-        """Motor de Enrutamiento V9.3: Evalúa tanto el input actual como el perfil persistente."""
+        """Motor de Enrutamiento: Evalúa tanto el input actual como el perfil persistente."""
         msg_lower = mensaje_usuario.lower()
         ctx_lower = contexto_memoria.lower()
         
-        # Diccionarios de peso cognitivo para balanceo de carga
         score_alpha = 0
         score_bravo = 0
         
-        # 1. Evaluación por términos técnicos explícitos en el comando actual
-        keywords_alpha = ["calculo", "algebra", "codigo", "python", "sensor", "iat", "map", "v8", "guaya", "circuito", "ingenieria", "matematicas", "parcial", "voltaje", "ecuacion"]
+        keywords_alpha = ["calculo", "algebra", "codigo", "python", "sensor", "iat", "map", "v8", "guaya", "circuito", "ingenieria", "matematicas", "parcial", "voltaje", "ecuacion", "obd", "dtc", "escaner", "fallo"]
         keywords_bravo = ["abrir", "youtube", "spotify", "frullato", "negocio", "ropa", "logistica", "tienda", "whatsapp", "marca", "comercial"]
         
         for k in keywords_alpha:
@@ -83,13 +101,11 @@ class TerceroCore:
         for k in keywords_bravo:
             if k in msg_lower: score_bravo += 3
             
-        # 2. Evaluación del Contexto Persistente en Memoria (Evita redundancias)
         if "mecatronica" in ctx_lower or "urbe" in ctx_lower:
             score_alpha += 1
         if "frullato" in ctx_lower or "comercial" in ctx_lower:
             score_bravo += 1
 
-        # Despacho lógico basado en el score mayor
         if score_alpha > score_bravo:
             self._log_hud("SYSTEM", "[NÚCLEO ALPHA ACTIVADO]: Sincronizando matriz de ingeniería y control de variables.")
             return f"{self.prompt_alpha}\n\n[MATRIZ DE CONFIGURACIÓN DEL OPERADOR]: {contexto_memoria}."
@@ -101,7 +117,6 @@ class TerceroCore:
             return f"Eres Tercero OS, un mainframe de inteligencia artificial avanzada con protocolo Jarvis integrado. Asiste al operador de forma clara y óptima. Variables de entorno: {contexto_memoria}."
 
     def _ejecutar_respuesta_contingencia(self, mensaje_usuario: str) -> str:
-        """Agente de Resiliencia Pasiva: Ejecuta una respuesta analítica si la API de Groq cae por completo."""
         msg_lower = mensaje_usuario.lower()
         if "abrir" in msg_lower:
             if "youtube" in msg_lower: return "Protocolo de contingencia activado. Reenrutando comando local.\nCOMMAND_OPEN: https://youtube.com"
@@ -109,8 +124,7 @@ class TerceroCore:
         
         return (
             "[TERCERO OS - NÚCLEO DE EMERGENCIA]: Operador, he detectado una interrupción crítica en los servidores principales. "
-            "He aislado la anomalía y activado el protocolo de resiliencia pasiva. Mis funciones de automatización e historial permanecen en línea. "
-            "¿Deseas que verifiquemos los logs locales del sistema?"
+            "He aislado la anomalía y activado el protocolo de resiliencia pasiva. Mis funciones de automatización e historial permanecen en línea."
         )
 
     def chat(self, user_id: str, message: str) -> dict:
@@ -119,6 +133,7 @@ class TerceroCore:
             memory = self.memory.recall(user_id)
 
             contenido_extraido = ""
+            pre_analisis_automotriz = ""
             imagen_base64 = None
             tipo_imagen = "image/jpeg"
             
@@ -136,22 +151,25 @@ class TerceroCore:
                         if ext == '.webp': tipo_imagen = "image/webp"
                         imagen_base64 = self._codificar_imagen_base64(ruta_completa)
                         message = f"[IMAGEN INYECTADA: {nombre_archivo}] El operador ha suministrado un componente visual para análisis inmediato."
-                    elif ext in ['.txt', '.py', '.js', '.json', '.html', '.css', '.md', '.log']:
+                    elif ext in ['.txt', '.py', '.js', '.json', '.html', '.css', '.md', '.log', '.csv']:
                         try:
                             with open(ruta_completa, 'r', encoding='utf-8', errors='ignore') as f:
                                 contenido_extraido = f.read(25000)
+                            # Activación del sub-módulo de pre-diagnóstico automotriz si es un archivo plano
+                            pre_analisis_automotriz = self._analizar_datos_obd2(contenido_extraido)
                         except Exception as e:
                             contenido_extraido = f"[Fallo al leer archivo de texto: {str(e)}]"
                     elif ext == '.pdf':
-                        contenido_extraido = f"[Documento PDF indexado: '{nombre_archivo}']. Flujo de datos cargado para escaneo de información corporativa o académica."
+                        contenido_extraido = f"[Documento PDF indexado: '{nombre_archivo}']."
                     else:
                         contenido_extraido = f"[Matriz de datos no soportada: '{nombre_archivo}']."
 
-            # Inyección del nuevo motor heurístico contextual
             system_content = self._enrutar_agente_heuristico(message, memory)
             
             if contenido_extraido:
                 system_content += f"\n\n[DATOS EXTRAÍDOS DEL ARCHIVO ATACHADO]:\n{contenido_extraido}"
+            if pre_analisis_automotriz:
+                system_content += f"\n\n{pre_analisis_automotriz}"
 
             user_content_structure = []
             if imagen_base64:
@@ -172,8 +190,8 @@ class TerceroCore:
             try:
                 answer = self.llm.chat(messages)
             except Exception as e:
-                self._log_hud("CRITICAL", f"ANOMALÍA DETECTADA: API de procesamiento caída ({str(e)}). Desviando flujo al Agente de Emergencia.")
-                answer = self._ejecutar_respuesta_contingencia(message)
+                self._log_hud("CRITICAL", f"ANOMALÍA DETECTADA: API caída ({str(e)}). Activando Agente de Emergencia.")
+                answer = self._ejecutar_reshape_contingencia(message)
 
             self.memory.save_chat(user_id, "user", message)
             self.memory.save_chat(user_id, "assistant", answer)
@@ -185,4 +203,4 @@ class TerceroCore:
             return {"text": answer, "audio_file": audio_filename}
 
         except Exception as e:
-            return {"text": f"Error crítico irreparable en Tercero Core V9.3: {str(e)}", "audio_file": None}
+            return {"text": f"Error crítico en Tercero Core V9.4: {str(e)}", "audio_file": None}
