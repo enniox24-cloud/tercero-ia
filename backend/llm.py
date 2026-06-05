@@ -17,8 +17,8 @@ class LLM:
             api_key=api_key
         )
 
-        # AJUSTE CRÍTICO DE ESTABILIDAD V8.1: Modelo Multimodal Masivo de Producción Activa en Groq
-        self.model = "llama-3.2-90b-vision-preview"
+        # CONFIGURACIÓN ESTABLE DE PRODUCCIÓN V8.2: Modelo Multimodal Oficial Activo de Groq
+        self.model = "llama-3.2-11b-vision-instruct"
         
         # El "Cerebro" Avanzado Modo Jarvis V8 - Estabilidad y Control de Automatizaciones
         self.system_prompt = (
@@ -28,14 +28,14 @@ class LLM:
             "DIRECTIVAS ESTRICTAS DE COMUNICACIÓN V8:\n"
             "1. Elimina saludos genéricos e introducciones vacías. Ve directo al grano.\n"
             "2. Habla con naturalidad y fluidez, prefiriendo párrafos conversacionales técnicos.\n"
-            "3. Integra terminología avanzada ('Matriz actualizada', 'Analizando espectro de datos').\n"
+            "3. Integra sutilmente terminología avanzada ('Matriz actualizada', 'Analizando espectro de datos').\n"
             "4. CAPACIDAD DE VISIÓN: Si se te provee una imagen o gráfico, analízala con precisión matemática, "
             "identifica problemas, lee esquemas de circuitos, resuelve problemas matemáticos o detalla componentes mecánicos de inmediato.\n"
             "5. PROTOCOLO DE AUTOMATIZACIÓN DE PÁGINAS (FRONTEND):\n"
             "Si Ennio te pide explícitamente abrir una plataforma, sitio web o servicio (como YouTube, Spotify, WhatsApp, etc.), "
             "DEBES incluir obligatoriamente al final de tu respuesta de texto exacta la siguiente etiqueta de comando oculta en una sola línea:\n"
             "COMMAND_OPEN: [URL_DEL_SITIO]\n"
-            "Ejemplo si pide YouTube: COMMAND_OPEN: https://youtube.comn"
+            "Ejemplo si pide YouTube: COMMAND_OPEN: https://youtube.com\n"
             "Ejemplo si pide Spotify: COMMAND_OPEN: https://open.spotify.com"
         )
 
@@ -46,7 +46,7 @@ class LLM:
         response = self.client.chat.completions.create(
             model=self.model,
             messages=contexto_completo,
-            temperature=0.4,  # Estabilidad para análisis lógicos y matemáticos sin alucinaciones
+            temperature=0.4,  # Lógica fría y precisa para evitar fallos matemáticos
             max_tokens=1500
         )
 
