@@ -5,7 +5,7 @@ import json
 import queue
 
 from flask import Flask, render_template, request, jsonify, Response
-from a2wsgi import WSGImiddleware  # <-- EL PUENTE INTERNO CRÍTICO
+from a2wsgi import WSGIMiddleware  # <-- REPARADO: Ahora con M mayúscula exacta
 
 # IMPORTACIÓN DE LOS COMPONENTES PRINCIPALES DEL MAINFRAME
 from backend.core import TerceroCore
@@ -104,13 +104,10 @@ def stream_telemetria():
     return Response(generar_flujo(), mimetype="text/event-stream")
 
 # =====================================================================
-# EL TRUCO MAESTRO: CONVERTIR FLASK (WSGI) A INTERFAZ ASGI PARA UVICORN
+# ADAPTADOR COMPLETAMENTE REPARADO CON LA SINTAXIS EXACTA (WSGIMiddleware)
 # =====================================================================
-# Render busca un objeto ejecutable llamado "app". Al envolverlo con 
-# WSGImiddleware, Uvicorn lo procesará perfectamente sin crasheos.
-app = WSGImiddleware(flask_app)
+app = WSGIMiddleware(flask_app)
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    # Para ejecución local tradicional
     flask_app.run(host='0.0.0.0', port=port, debug=False)
