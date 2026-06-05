@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERCERO OS - MAINFRAME V8.8</title>
+    <title>TERCERO OS - MAINFRAME V9.0</title>
     <style>
         :root {
             --neon-blue: #00f2fe;
@@ -73,7 +73,8 @@
 
         .user-log { color: #85a5ff; text-shadow: 0 0 5px rgba(133, 165, 255, 0.3); }
         .tercero-log { color: var(--neon-blue); text-shadow: 0 0 8px rgba(0, 242, 254, 0.4); }
-        .system-log { color: var(--listening-red); font-weight: bold; text-shadow: 0 0 10px var(--listening-red); }
+        .system-log { color: #ffb969; text-shadow: 0 0 8px rgba(255, 185, 105, 0.4); }
+        .critical-log { color: var(--listening-red); font-weight: bold; text-shadow: 0 0 10px var(--listening-red); }
         .activation-log { color: #52c41a; font-weight: bold; text-shadow: 0 0 12px rgba(82, 196, 26, 0.6); }
 
         /* Panel de Control Inferior Estilizado */
@@ -160,12 +161,12 @@
 <body>
 
     <div id="mainframe-header">
-        <div>// TERCERO OS // V8.8_JARVIS_HUD</div>
-        <div id="system-status">STATUS: CORE_ACTIVE | MIC: ESCUCHA_PASIVA</div>
+        <div>// TERCERO OS // V9.0_JARVIS_HUD</div>
+        <div id="system-status">STATUS: CONNECTING_TO_STREAM...</div>
     </div>
 
     <div id="console-container">
-        <div class="log-entry tercero-log">[TERCERO OS]: Núcleo cuántico estabilizado en producción. Protocolos Jarvis operativos. El canal de escucha pasiva está abierto en segundo plano. Diga "Tercero, actívate" para iniciar transmisión directa.</div>
+        <div class="log-entry tercero-log">[TERCERO OS]: Interfaz Holográfica iniciada. Conectando canal SSE de telemetría...</div>
     </div>
 
     <div id="input-panel">
@@ -192,6 +193,20 @@
         });
 
         // ========================================================
+        // ENLACE CUÁNTICO SSE: RECEPTOR DE LOGS EN VIVO DEL SERVIDOR
+        // ========================================================
+        const telemetrySource = new EventSource('/stream-telemetry');
+
+        telemetrySource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            imprimirLog(data.origen, data.texto);
+        };
+
+        telemetrySource.onerror = function() {
+            console.log("[TELEMETRÍA]: Intentando reconectar socket SSE...");
+        };
+
+        // ========================================================
         // INTERCEPTOR DE AUTOMATIZACIÓN DE APLICACIONES (JARVIS MODE)
         // ========================================================
         function procesarComandosFronteEnd(textoRespuesta) {
@@ -201,7 +216,7 @@
 
             if (match) {
                 const urlTarget = match[1];
-                imprimirLog('SYSTEM', `AUTORIZACIÓN DIRECTA: Ejecutando apertura automatizada de entorno en: ${urlTarget}`);
+                imprimirLog('CRITICAL', `AUTORIZACIÓN DIRECTA: Ejecutando apertura automatizada de entorno en: ${urlTarget}`);
                 textoLimpio = textoRespuesta.replace(regexComando, '').trim();
                 
                 setTimeout(() => {
@@ -222,9 +237,7 @@
             if (!audioPlayer.paused) {
                 audioPlayer.pause();
                 audioPlayer.currentTime = 0;
-                console.log("[NÚCLEO]: Transmisión de audio previa interrumpida por comando del operador.");
             }
-            // Cancelar cualquier síntesis de voz nativa del navegador en cola
             if (window.speechSynthesis.speaking) {
                 window.speechSynthesis.cancel();
             }
@@ -248,7 +261,7 @@
                     audioPlayer.play().catch(e => console.log("Audio play deferred"));
                 }
             } catch (err) {
-                imprimirLog('SYSTEM', 'CRITICAL ERROR: Enlace cognitivo con el servidor interrumpido.');
+                imprimirLog('CRITICAL', 'CRITICAL ERROR: Enlace cognitivo con el servidor interrumpido.');
             }
         }
 
@@ -260,7 +273,7 @@
             if (!input.files || input.files.length === 0) return;
             const file = input.files[0];
             
-            imprimirLog('SYSTEM', `Iniciando transferencia multimedia al Mainframe: ${file.name}`);
+            imprimirLog('CRITICAL', `Iniciando transferencia multimedia al Mainframe: ${file.name}`);
 
             const formData = new FormData();
             formData.append('user_id', 'ennio');
@@ -281,7 +294,7 @@
                     audioPlayer.play().catch(e => console.log("Audio play deferred"));
                 }
             } catch (err) {
-                imprimirLog('SYSTEM', 'CRITICAL ERROR: Fallo de inyección en la matriz multimedia.');
+                imprimirLog('CRITICAL', 'CRITICAL ERROR: Fallo de inyección en la matriz multimedia.');
             }
             input.value = '';
         }
@@ -289,6 +302,7 @@
         function imprimirLog(origen, texto) {
             const entry = document.createElement('div');
             entry.classList.add('log-entry');
+            
             if (origen === 'USER') {
                 entry.classList.add('user-log');
                 entry.innerHTML = `[ENNIO]: ${texto}`;
@@ -297,9 +311,12 @@
                 entry.innerHTML = `[TERCERO]: ${texto}`;
             } else if (origen === 'ACTIVATION') {
                 entry.classList.add('activation-log');
-                entry.innerHTML = `[NÚCLEO] ${texto}`;
-            } else {
+                entry.innerHTML = `[NÚCLEO]: ${texto}`;
+            } else if (origen === 'SYSTEM') {
                 entry.classList.add('system-log');
+                entry.innerHTML = `[MAINFRAME]: ${texto}`;
+            } else {
+                entry.classList.add('critical-log');
                 entry.innerHTML = `[SISTEMA]: ${texto}`;
             }
             consoleContainer.appendChild(entry);
@@ -329,7 +346,6 @@
                 if (!modoEscuchaActiva) {
                     if (transcript.includes("tercero actívate") || transcript.includes("tercero activate")) {
                         
-                        // INTERRUPCIÓN POR VOZ PASIVA: Silenciamos de inmediato cualquier respuesta previa en curso
                         if (!audioPlayer.paused) {
                             audioPlayer.pause();
                             audioPlayer.currentTime = 0;
@@ -365,7 +381,7 @@
 
             recognition.start();
         } else {
-            imprimirLog('SYSTEM', 'ADVERTENCIA: Interfaz de voz no soportada por el navegador actual.');
+            imprimirLog('CRITICAL', 'ADVERTENCIA: Interfaz de voz no soportada por el navegador actual.');
         }
     </script>
 </body>
