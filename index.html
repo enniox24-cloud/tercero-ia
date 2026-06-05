@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERCERO OS - MAINFRAME V8.5</title>
+    <title>TERCERO OS - MAINFRAME V8.8</title>
     <style>
         :root {
             --neon-blue: #00f2fe;
@@ -160,7 +160,7 @@
 <body>
 
     <div id="mainframe-header">
-        <div>// TERCERO OS // V8.5_JARVIS_HUD</div>
+        <div>// TERCERO OS // V8.8_JARVIS_HUD</div>
         <div id="system-status">STATUS: CORE_ACTIVE | MIC: ESCUCHA_PASIVA</div>
     </div>
 
@@ -204,7 +204,6 @@
                 imprimirLog('SYSTEM', `AUTORIZACIÓN DIRECTA: Ejecutando apertura automatizada de entorno en: ${urlTarget}`);
                 textoLimpio = textoRespuesta.replace(regexComando, '').trim();
                 
-                // Ejecuta la automatización abriendo la pestaña en tu monitor
                 setTimeout(() => {
                     window.open(urlTarget, '_blank');
                 }, 800);
@@ -212,9 +211,23 @@
             return textoLimpio;
         }
 
+        // ========================================================
+        // ENVÍO DE COMANDOS CON DETENCIÓN ASÍNCRONA DE AUDIO
+        // ========================================================
         async function enviarComando(textoDictado = null) {
             const cmd = textoDictado ? textoDictado.trim() : inputCommand.value.trim();
             if (!cmd) return;
+
+            // PARADA DE EMERGENCIA ASÍNCRONA: Interrupción forzada si el sistema está hablando
+            if (!audioPlayer.paused) {
+                audioPlayer.pause();
+                audioPlayer.currentTime = 0;
+                console.log("[NÚCLEO]: Transmisión de audio previa interrumpida por comando del operador.");
+            }
+            // Cancelar cualquier síntesis de voz nativa del navegador en cola
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
+            }
 
             if (!textoDictado) inputCommand.value = '';
             imprimirLog('USER', cmd);
@@ -294,7 +307,7 @@
         }
 
         // ========================================================
-        // ESCUCHA CONTINUA INTELIGENTE CON RESPUESTA DE CONFIRMACIÓN
+        // ESCUCHA CONTINUA INTELIGENTE CON CONTROL DE INTERRUPCIÓN
         // ========================================================
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
@@ -315,12 +328,21 @@
                 
                 if (!modoEscuchaActiva) {
                     if (transcript.includes("tercero actívate") || transcript.includes("tercero activate")) {
+                        
+                        // INTERRUPCIÓN POR VOZ PASIVA: Silenciamos de inmediato cualquier respuesta previa en curso
+                        if (!audioPlayer.paused) {
+                            audioPlayer.pause();
+                            audioPlayer.currentTime = 0;
+                        }
+                        if (window.speechSynthesis.speaking) {
+                            window.speechSynthesis.cancel();
+                        }
+
                         modoEscuchaActiva = true;
                         voiceIndicator.classList.add('active');
                         systemStatus.innerHTML = "STATUS: CORE_ACTIVE | MIC: TRANSMITIENDO";
                         imprimirLog('ACTIVATION', 'MATRIZ VOCAL SINCRONIZADA: Procesando órdenes del Operador...');
                         
-                        // Respuesta sutil nativa para alertar que ya te está escuchando
                         const alerta = new SpeechSynthesisUtterance("Sincronizado, Ennio");
                         alerta.rate = 1.1;
                         window.speechSynthesis.speak(alerta);
