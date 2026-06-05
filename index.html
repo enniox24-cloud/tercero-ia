@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERCERO OS - MAINFRAME V8.0</title>
+    <title>TERCERO OS - MAINFRAME V8.5</title>
     <style>
         :root {
             --neon-blue: #00f2fe;
-            --terminal-bg: #05070a;
-            --panel-border: rgba(0, 242, 254, 0.25);
+            --terminal-bg: #030508;
+            --panel-border: rgba(0, 242, 254, 0.3);
             --text-color: #e0f7fc;
             --listening-red: #ff4d4f;
+            --matrix-glow: rgba(0, 242, 254, 0.15);
         }
 
         body {
@@ -24,48 +25,67 @@
             height: 100vh;
             box-sizing: border-box;
             overflow: hidden;
+            position: relative;
+        }
+
+        /* Fondo Dinámico Estilo Interfaz de Defensa */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 30, 49, 0.1) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 4px, 6px 100%;
+            z-index: -1;
+            pointer-events: none;
         }
 
         #mainframe-header {
             border-bottom: 2px solid var(--neon-blue);
-            padding-bottom: 10px;
+            padding-bottom: 12px;
             margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+            text-shadow: 0 0 15px var(--neon-blue);
+            font-weight: bold;
+            letter-spacing: 2px;
         }
 
+        /* Contenedor Holográfico de Consola */
         #console-container {
             flex: 1;
             border: 1px solid var(--panel-border);
-            background: rgba(0, 10, 20, 0.6);
-            border-radius: 4px;
-            padding: 20px;
+            background: rgba(4, 12, 24, 0.75);
+            border-radius: 6px;
+            padding: 25px;
             overflow-y: auto;
-            box-shadow: inset 0 0 20px rgba(0, 242, 254, 0.05);
+            box-shadow: inset 0 0 30px rgba(0, 242, 254, 0.1), 0 0 20px rgba(0, 0, 0, 0.8);
             margin-bottom: 20px;
+            backdrop-filter: blur(4px);
         }
 
         .log-entry {
-            margin-bottom: 12px;
-            line-height: 1.5;
-            animation: fadeIn 0.2s ease-out;
+            margin-bottom: 14px;
+            line-height: 1.6;
+            animation: fadeIn 0.25s ease-out;
+            font-size: 15px;
         }
 
-        .user-log { color: #85a5ff; }
-        .tercero-log { color: var(--neon-blue); }
-        .system-log { color: #ff4d4f; font-weight: bold; }
-        .activation-log { color: #52c41a; font-weight: bold; text-shadow: 0 0 8px rgba(82, 196, 26, 0.4); }
+        .user-log { color: #85a5ff; text-shadow: 0 0 5px rgba(133, 165, 255, 0.3); }
+        .tercero-log { color: var(--neon-blue); text-shadow: 0 0 8px rgba(0, 242, 254, 0.4); }
+        .system-log { color: var(--listening-red); font-weight: bold; text-shadow: 0 0 10px var(--listening-red); }
+        .activation-log { color: #52c41a; font-weight: bold; text-shadow: 0 0 12px rgba(82, 196, 26, 0.6); }
 
+        /* Panel de Control Inferior Estilizado */
         #input-panel {
             display: flex;
-            gap: 10px;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 10px;
+            gap: 12px;
+            background: rgba(2, 6, 12, 0.9);
+            padding: 12px 20px;
             border: 1px solid var(--panel-border);
-            border-radius: 4px;
+            border-radius: 6px;
             align-items: center;
+            box-shadow: 0 0 25px rgba(0, 242, 254, 0.05);
         }
 
         #input-command {
@@ -76,61 +96,82 @@
             font-family: 'Courier New', monospace;
             font-size: 16px;
             outline: none;
+            letter-spacing: 1px;
+        }
+
+        #input-command::placeholder {
+            color: rgba(0, 242, 254, 0.4);
         }
 
         .action-btn {
-            background: transparent;
+            background: rgba(0, 242, 254, 0.03);
             border: 1px solid var(--neon-blue);
             color: var(--neon-blue);
-            padding: 8px 20px;
+            padding: 10px 24px;
             cursor: pointer;
             font-family: 'Courier New', monospace;
-            transition: all 0.3s;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.25s ease-in-out;
+            border-radius: 4px;
         }
 
         .action-btn:hover {
             background: var(--neon-blue);
             color: var(--terminal-bg);
-            box-shadow: 0 0 15px var(--neon-blue);
+            box-shadow: 0 0 20px var(--neon-blue);
+            transform: translateY(-1px);
         }
 
+        /* Núcleo de Energía Visual (Indicador de Estado de Voz) */
         #voice-indicator {
-            width: 12px;
-            height: 12px;
-            background-color: #333;
+            width: 14px;
+            height: 14px;
+            background-color: rgba(0, 242, 254, 0.2);
+            border: 1px solid var(--neon-blue);
             border-radius: 50%;
-            margin-right: 5px;
-            transition: background-color 0.3s, box-shadow 0.3s;
+            margin-right: 8px;
+            transition: all 0.4s ease;
+            box-shadow: 0 0 5px rgba(0, 242, 254, 0.2);
         }
 
         #voice-indicator.active {
             background-color: var(--listening-red);
-            box-shadow: 0 0 10px var(--listening-red);
+            border-color: var(--listening-red);
+            box-shadow: 0 0 15px var(--listening-red), inset 0 0 5px #fff;
+            animation: pulse 1s infinite alternate;
         }
 
         #hidden-file-input { display: none; }
 
+        /* Animaciones del Sistema */
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
+            from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); opacity: 0.8; }
+            to { transform: scale(1.2); opacity: 1; }
         }
     </style>
 </head>
 <body>
 
     <div id="mainframe-header">
-        <div>// TERCERO OS // V8.0_JARVIS_PROTOTYPE</div>
+        <div>// TERCERO OS // V8.5_JARVIS_HUD</div>
         <div id="system-status">STATUS: CORE_ACTIVE | MIC: ESCUCHA_PASIVA</div>
     </div>
 
     <div id="console-container">
-        <div class="log-entry tercero-log">[TERCERO OS]: Conexión establecida. Protocolos Jarvis activos en segundo plano. Diga "Tercero, actívate" para dictar órdenes por voz de manera directa.</div>
+        <div class="log-entry tercero-log">[TERCERO OS]: Núcleo cuántico estabilizado en producción. Protocolos Jarvis operativos. El canal de escucha pasiva está abierto en segundo plano. Diga "Tercero, actívate" para iniciar transmisión directa.</div>
     </div>
 
     <div id="input-panel">
-        <div id="voice-indicator" title="Indicador de Voz"></div>
+        <div id="voice-indicator" title="Núcleo de Voz Pasiva"></div>
         <span style="color: var(--neon-blue); font-weight: bold;">>&nbsp;</span>
-        <input type="text" id="input-command" placeholder="Inyectar comandos o dictar vía por voz activa..." autocomplete="off">
+        <input type="text" id="input-command" placeholder="Inyectar secuencia de comandos o dictar vía voz activa..." autocomplete="off">
         <button class="action-btn" onclick="triggerUpload()">INYECTAR_MEDIO</button>
         <button class="action-btn" onclick="enviarComando()">EJECUTAR</button>
     </div>
@@ -151,7 +192,7 @@
         });
 
         // ========================================================
-        // MOTOR FRONTEND DE AUTOMATIZACIÓN Y FILTRADO DE COMANDOS
+        // INTERCEPTOR DE AUTOMATIZACIÓN DE APLICACIONES (JARVIS MODE)
         // ========================================================
         function procesarComandosFronteEnd(textoRespuesta) {
             let textoLimpio = textoRespuesta;
@@ -160,13 +201,13 @@
 
             if (match) {
                 const urlTarget = match[1];
-                imprimirLog('SYSTEM', `Abriendo enlace del Mainframe autorizado: ${urlTarget}`);
+                imprimirLog('SYSTEM', `AUTORIZACIÓN DIRECTA: Ejecutando apertura automatizada de entorno en: ${urlTarget}`);
                 textoLimpio = textoRespuesta.replace(regexComando, '').trim();
                 
-                // Ejecución directa en una pestaña nueva del navegador
+                // Ejecuta la automatización abriendo la pestaña en tu monitor
                 setTimeout(() => {
                     window.open(urlTarget, '_blank');
-                }, 1000);
+                }, 800);
             }
             return textoLimpio;
         }
@@ -186,16 +227,15 @@
                 });
                 const data = await response.json();
                 
-                // Ejecuta filtro para ver si Tercero ordenó abrir alguna aplicación
                 const textoFinal = procesarComandosFronteEnd(data.text);
                 imprimirLog('TERCERO', textoFinal);
 
                 if (data.audio_url) {
                     audioPlayer.src = data.audio_url;
-                    audioPlayer.play().catch(e => console.log("Audio play blocked"));
+                    audioPlayer.play().catch(e => console.log("Audio play deferred"));
                 }
             } catch (err) {
-                imprimirLog('SYSTEM', 'CRITICAL ERROR: Interrupción del enlace cognitivo.');
+                imprimirLog('SYSTEM', 'CRITICAL ERROR: Enlace cognitivo con el servidor interrumpido.');
             }
         }
 
@@ -207,7 +247,7 @@
             if (!input.files || input.files.length === 0) return;
             const file = input.files[0];
             
-            imprimirLog('SYSTEM', `Inyectando matriz multimedia al backend: ${file.name}`);
+            imprimirLog('SYSTEM', `Iniciando transferencia multimedia al Mainframe: ${file.name}`);
 
             const formData = new FormData();
             formData.append('user_id', 'ennio');
@@ -225,10 +265,10 @@
 
                 if (data.audio_url) {
                     audioPlayer.src = data.audio_url;
-                    audioPlayer.play().catch(e => console.log("Audio play blocked"));
+                    audioPlayer.play().catch(e => console.log("Audio play deferred"));
                 }
             } catch (err) {
-                imprimirLog('SYSTEM', 'CRITICAL ERROR: Fallo de enlace en carga multimedia.');
+                imprimirLog('SYSTEM', 'CRITICAL ERROR: Fallo de inyección en la matriz multimedia.');
             }
             input.value = '';
         }
@@ -244,7 +284,7 @@
                 entry.innerHTML = `[TERCERO]: ${texto}`;
             } else if (origen === 'ACTIVATION') {
                 entry.classList.add('activation-log');
-                entry.innerHTML = `[MAIN] ${texto}`;
+                entry.innerHTML = `[NÚCLEO] ${texto}`;
             } else {
                 entry.classList.add('system-log');
                 entry.innerHTML = `[SISTEMA]: ${texto}`;
@@ -254,7 +294,7 @@
         }
 
         // ========================================================
-        // MOTOR RECONOCIMIENTO DE VOZ CONTINUO ("Tercero, actívate")
+        // ESCUCHA CONTINUA INTELIGENTE CON RESPUESTA DE CONFIRMACIÓN
         // ========================================================
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
@@ -274,18 +314,18 @@
                 const transcript = event.results[resultIndex][0].transcript.trim().toLowerCase();
                 
                 if (!modoEscuchaActiva) {
-                    // Esperando comando de activación de voz global
                     if (transcript.includes("tercero actívate") || transcript.includes("tercero activate")) {
                         modoEscuchaActiva = true;
                         voiceIndicator.classList.add('active');
-                        systemStatus.innerHTML = "STATUS: CORE_ACTIVE | MIC: RECONOCIENDO";
-                        imprimirLog('ACTIVATION', 'PROTOCOLO VOCAL ASIGNADO: Sistema receptivo, ordene Ennio...');
+                        systemStatus.innerHTML = "STATUS: CORE_ACTIVE | MIC: TRANSMITIENDO";
+                        imprimirLog('ACTIVATION', 'MATRIZ VOCAL SINCRONIZADA: Procesando órdenes del Operador...');
                         
-                        // Sonido sutil electrónico nativo del navegador (Beep de activación Jarvis)
-                        window.speechSynthesis.speak(new SpeechSynthesisUtterance("Sincronizado"));
+                        // Respuesta sutil nativa para alertar que ya te está escuchando
+                        const alerta = new SpeechSynthesisUtterance("Sincronizado, Ennio");
+                        alerta.rate = 1.1;
+                        window.speechSynthesis.speak(alerta);
                     }
                 } else {
-                    // Captura directa de la orden tras la activación
                     enviarComando(transcript);
                     modoEscuchaActiva = false;
                     voiceIndicator.classList.remove('active');
@@ -294,19 +334,16 @@
             };
 
             recognition.onerror = () => {
-                // Auto-reparación automática si se pierde sincronía por silencios prolongados
                 try { recognition.start(); } catch(e){}
             };
 
             recognition.onend = () => {
-                // Mantiene el bucle de escucha infinita corriendo en segundo plano
                 recognition.start();
             };
 
-            // Inicialización de la matriz de sonido del HUD
             recognition.start();
         } else {
-            imprimirLog('SYSTEM', 'ADVERTENCIA: Tu navegador no soporta el API de reconocimiento nativo de voz.');
+            imprimirLog('SYSTEM', 'ADVERTENCIA: Interfaz de voz no soportada por el navegador actual.');
         }
     </script>
 </body>
