@@ -143,7 +143,7 @@ class MemoryManager:
             except Exception:
                 pass
         
-        # Bloque base de datos fijas del ecosistema de Ennio
+        # Matriz base fija del ecosistema de Ennio
         return {
             "operador": "Ennio Xavier Guglielmucci Colina",
             "ubicacion": "Maracaibo, Venezuela",
@@ -151,6 +151,49 @@ class MemoryManager:
             "vehiculo_principal": "Jeep Grand Cherokee 2005 WK 4.7L V8 (Guaya)",
             "mascota": "DoKy (Husky)"
         }
+
+    def calcular_simulacion_bravo(self, tipo_negocio: str, datos_financieros: dict) -> str:
+        """Sub-módulo financiero de la matriz Enterprise: Ejecuta proyecciones de rentabilidad netas."""
+        try:
+            if tipo_negocio == "importacion":
+                costo_origen = datos_financieros.get("costo_origen", 0)
+                peso_libras = datos_financieros.get("peso_libras", 0)
+                tarifa_flete = datos_financieros.get("tarifa_flete", 4.5) # Promedio Miami-Maracaibo puerta a puerta
+                costo_nacionalizacion = datos_financieros.get("costo_nacionalizacion", 0)
+                unidades = datos_financieros.get("unidades", 1)
+                
+                costo_flete_total = peso_libras * tarifa_flete
+                costo_total_puesto = costo_origen + costo_flete_total + costo_nacionalizacion
+                costo_unitario_real = costo_total_puesto / unidades
+                
+                return (
+                    f"\n[MATRIZ LOGÍSTICA ENTERPRISE - REPORTE DE IMPORTACIÓN]:\n"
+                    f"- Unidades Totales: {unidades}\n"
+                    f"- Costo Flete Consolidado (Miami-Maracaibo): ${costo_flete_total:.2f}\n"
+                    f"- Costo Total de Inversión Puesta en Destino: ${costo_total_puesto:.2f}\n"
+                    f"- Costo Unitario Real de Despliegue por Pieza: ${costo_unitario_real:.2f}\n"
+                    f"Sugerencia de Margen Operativo (35%): ${(costo_unitario_real * 1.35):.2f}"
+                )
+                
+            elif tipo_negocio == "frullato":
+                costo_materia_prima = datos_financieros.get("materia_prima", 0) # Frutas, bases, envases
+                costos_fijos_proporcionales = datos_financieros.get("costos_fijos", 0) # Local, electricidad, personal por unidad
+                precio_venta = datos_financieros.get("precio_venta", 0)
+                
+                costo_produccion_total = costo_materia_prima + costos_fijos_proporcionales
+                margen_ganancia = precio_venta - costo_produccion_total
+                porcentaje_margen = (margen_ganancia / precio_venta) * 100 if precio_venta > 0 else 0
+                
+                return (
+                    f"\n[MATRIZ LOGÍSTICA ENTERPRISE - SIMULACIÓN RECEPTA FRULLATO]:\n"
+                    f"- Costo de Producción Neto por Unidad: ${costo_produccion_total:.2f}\n"
+                    f"- Margen Neto de Utilidad por Unidad Vendida: ${margen_ganancia:.2f}\n"
+                    f"- Rendimiento Operativo de la Receta: {porcentaje_margen:.1f}%\n"
+                    f"Estado Financiero: {'EFICIENTE_OPTIMIZADO' if porcentaje_margen >= 40 else 'REVISAR_PROPORCIONES_COSTO'}"
+                )
+        except Exception as e:
+            return f"[ERROR CONSOLA FINANCIERA]: Fallo matemático: {str(e)}"
+        return ""
 
     def recall(self, user_id: str) -> str:
         """Compila los metadatos planos para inyección directa en el prompt del sistema."""
