@@ -12,6 +12,3 @@ SpeechRecognition
 gTTS
 edge-tts
 Flask==3.0.3
-edge-tts
-groq
-sqlite3
