@@ -1,6 +1,8 @@
 import os
 import time
 import threading
+import json  # <-- FIX CRÍTICO: Inyección del módulo para serialización de datos
+
 from flask import Flask, render_template, request, jsonify, Response
 
 # IMPORTACIÓN DE LOS COMPONENTES PRINCIPALES DEL MAINFRAME
