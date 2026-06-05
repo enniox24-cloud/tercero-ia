@@ -10,12 +10,12 @@ class MemoryManager:
         self._verificar_y_restaurar_respaldo()
 
     def _inicializar_tablas_memoria(self):
-        """Garantiza la creación del esquema lógico de almacenamiento local."""
+        """Garantiza la creación del esquema lógico con aislamiento de hilos."""
         try:
-            conn = sqlite3.connect(self.db_path)
+            # check_same_thread=False evita que el demonio de fondo choque con Flask
+            conn = sqlite3.connect(self.db_path, check_same_thread=False)
             cursor = conn.cursor()
             
-            # Tabla de historial lineal de interacciones
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS historial_chat (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,7 +26,6 @@ class MemoryManager:
                 )
             ''')
             
-            # Tabla de perfil persistente indexado
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS perfil_operador (
                     user_id TEXT PRIMARY KEY,
@@ -40,13 +39,13 @@ class MemoryManager:
             print(f"[CRÍTICO MEMORIA]: Fallo al estructurar tablas: {str(e)}")
 
     def _verificar_y_restaurar_respaldo(self):
-        """Evita la amnesia de Render. Si la base de datos se borró, restaura el JSON."""
+        """Evita la amnesia de Render de forma segura."""
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = sqlite3.connect(self.db_path, check_same_thread=False)
             cursor = conn.cursor()
             cursor.execute("SELECT COUNT(*) FROM perfil_operador")
             if cursor.fetchone()[0] == 0 and os.path.exists(self.backup_path):
-                print("[MEMORIA]: Detectado reinicio de Render. Inyectando respaldo de contexto...")
+                print("[MEMORIA]: Restaurando contexto desde espejo...")
                 with open(self.backup_path, 'r', encoding='utf-8') as f:
                     datos_json = f.read()
                 cursor.execute(
@@ -59,9 +58,8 @@ class MemoryManager:
             print(f"[REPARACIÓN]: No se pudo sincronizar el respaldo: {str(e)}")
 
     def save_chat(self, user_id: str, role: str, content: str):
-        """Registra la conversación en curso y analiza variaciones de contexto."""
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = sqlite3.connect(self.db_path, check_same_thread=False)
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT INTO historial_chat (user_id, role, content) VALUES (?, ?, ?)",
@@ -76,12 +74,10 @@ class MemoryManager:
             print(f"[ERROR REGISTRO]: {str(e)}")
 
     def _actualizar_perfil_automatico(self, user_id: str, text: str):
-        """Escáner pasivo heurístico para registrar cambios de entorno."""
         contexto = self.load_profile(user_id)
         modificado = False
         text_lower = text.lower()
 
-        # Detección y refresco de variables del operador
         if "mi carro" in text_lower or "el jeep" in text_lower or "grand cherokee" in text_lower:
             contexto["vehiculo_principal"] = "Jeep Grand Cherokee 2005 WK 4.7L V8 (Acelerador mecánico por guaya)"
             modificado = True
@@ -102,12 +98,9 @@ class MemoryManager:
             self.save_profile(user_id, contexto)
 
     def save_profile(self, user_id: str, data: dict):
-        """Escribe el contexto en la base de datos y genera copia espejo en disco."""
         try:
             str_datos = json.dumps(data, ensure_ascii=False, indent=4)
-            
-            # Guardado en base de datos
-            conn = sqlite3.connect(self.db_path)
+            conn = sqlite3.connect(self.db_path, check_same_thread=False)
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT INTO perfil_operador (user_id, datos_contexto) VALUES (?, ?) "
@@ -117,16 +110,14 @@ class MemoryManager:
             conn.commit()
             conn.close()
             
-            # Guardado en archivo espejo de contingencia
             with open(self.backup_path, 'w', encoding='utf-8') as f:
                 f.write(str_datos)
         except Exception as e:
             print(f"[FALLO PERFIL]: {str(e)}")
 
     def load_profile(self, user_id: str) -> dict:
-        """Extrae el perfil activo desde el almacenamiento de mayor disponibilidad."""
         try:
-            conn = sqlite3.connect(self.db_path)
+            conn = sqlite3.connect(self.db_path, check_same_thread=False)
             cursor = conn.cursor()
             cursor.execute("SELECT datos_contexto FROM perfil_operador WHERE user_id = ?", (user_id,))
             fila = cursor.fetchone()
@@ -143,7 +134,6 @@ class MemoryManager:
             except Exception:
                 pass
         
-        # Matriz base fija del ecosistema de Ennio
         return {
             "operador": "Ennio Xavier Guglielmucci Colina",
             "ubicacion": "Maracaibo, Venezuela",
@@ -153,7 +143,6 @@ class MemoryManager:
         }
 
     def calcular_simulacion_bravo(self, tipo_negocio: str, datos_financieros: dict) -> str:
-        """Sub-módulo financiero de la matriz Enterprise: Ejecuta proyecciones de rentabilidad netas."""
         try:
             if tipo_negocio == "importacion":
                 costo_origen = datos_financieros.get("costo_origen", 0)
@@ -169,12 +158,11 @@ class MemoryManager:
                 return (
                     f"\n[MATRIZ LOGÍSTICA ENTERPRISE - REPORTE DE IMPORTACIÓN]:\n"
                     f"- Unidades Totales: {unidades}\n"
-                    f"- Costo Flete Consolidado (Miami-Maracaibo): ${costo_flete_total:.2f}\n"
+                    f"- Costo Flete Consolidado: ${costo_flete_total:.2f}\n"
                     f"- Costo Total de Inversión Puesta en Destino: ${costo_total_puesto:.2f}\n"
                     f"- Costo Unitario Real de Despliegue por Pieza: ${costo_unitario_real:.2f}\n"
                     f"Sugerencia de Margen Operativo (35%): ${(costo_unitario_real * 1.35):.2f}"
                 )
-                
             elif tipo_negocio == "frullato":
                 costo_materia_prima = datos_financieros.get("materia_prima", 0)
                 costos_fijos_proporcionales = datos_financieros.get("costos_fijos", 0)
@@ -196,7 +184,6 @@ class MemoryManager:
         return ""
 
     def recall(self, user_id: str) -> str:
-        """Compila los metadatos planos para inyección directa en el prompt del sistema."""
         perfil = self.load_profile(user_id)
         detalles = [f"{k.upper()}: {v}" for k, v in perfil.items()]
         return " | ".join(detalles)
