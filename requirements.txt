@@ -10,3 +10,4 @@ aiohttp
 python-dotenv
 SpeechRecognition
 gTTS
+edge-tts
