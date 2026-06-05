@@ -7,7 +7,7 @@ import base64
 from backend.llm import LLM
 from backend.memory import MemoryManager
 from backend.plugins.voice import VoicePlugin
-from backend.plugins.simulator import AlphaSimulator  # <-- REPARADO: Importación limpia sin el ".py"
+from backend.plugins.simulator import AlphaSimulator
 
 class TerceroCore:
     def __init__(self):
