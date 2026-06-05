@@ -5,15 +5,15 @@ import json
 import queue
 
 from flask import Flask, render_template, request, jsonify, Response
-from a2wsgi import WSGIMiddleware  # <-- REPARADO: Ahora con M mayúscula exacta
+from a2wsgi import WSGIMiddleware  # El puente oficial y correcto para Uvicorn
 
-# IMPORTACIÓN DE LOS COMPONENTES PRINCIPALES DEL MAINFRAME
+# IMPORTACIÓN DE LOS COMPONENTES PRINCIPALES DEL BACKEND
 from backend.core import TerceroCore
 from backend.plugins.environment import EnvironmentPlugin
 
 flask_app = Flask(__name__, template_folder="frontend/templates", static_folder="frontend/static")
 
-# Inicialización segura de componentes del backend
+# Inicialización segura de componentes
 core = TerceroCore()
 env_monitor = EnvironmentPlugin()
 clientes_sse = []
@@ -31,6 +31,7 @@ def enviar_log_al_hud(origen: str, mensaje: str):
     except Exception as e:
         print(f"[ERROR SSE]: {str(e)}")
 
+# Vinculación del canal de logs externos
 core.enviar_log_external = enviar_log_al_hud
 
 def daemon_tareas_segundo_plano():
@@ -68,10 +69,12 @@ def daemon_tareas_segundo_plano():
 hilo_demonio = threading.Thread(target=daemon_tareas_segundo_plano, daemon=True)
 hilo_demonio.start()
 
+# RUTA PRINCIPAL - INDEX
 @flask_app.route('/')
 def index():
     return render_template('index.html')
 
+# RUTA DE LA API DE CHAT
 @flask_app.route('/api/chat', methods=['POST'])
 def api_chat():
     try:
@@ -87,6 +90,7 @@ def api_chat():
     except Exception as e:
         return jsonify({"error": f"Fallo en comunicación: {str(e)}"}), 500
 
+# RUTA DE TELEMETRÍA EN TIEMPO REAL (SSE)
 @flask_app.route('/stream_telemetria')
 def stream_telemetria():
     def generar_flujo():
@@ -104,8 +108,10 @@ def stream_telemetria():
     return Response(generar_flujo(), mimetype="text/event-stream")
 
 # =====================================================================
-# ADAPTADOR COMPLETAMENTE REPARADO CON LA SINTAXIS EXACTA (WSGIMiddleware)
+# ACOPLAMIENTO DE MONTAJE PARA EL ENTORNO DE RENDER
 # =====================================================================
+# Render busca el objeto ejecutable final. Convertimos el flask_app (WSGI)
+# en un objeto ejecutable ASGI compatible con Uvicorn usando la librería.
 app = WSGIMiddleware(flask_app)
 
 if __name__ == '__main__':
