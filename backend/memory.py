@@ -5,15 +5,17 @@ import json
 class MemoryManager:
     def __init__(self):
         self.db_path = "tercero_memory.db"
+        self.backup_path = "backup_context_operador.json"
         self._inicializar_tablas_memoria()
+        self._verificar_y_restaurar_respaldo()
 
     def _inicializar_tablas_memoria(self):
-        """Asegura que existan las tablas de historial y el perfil de contexto persistente."""
+        """Garantiza la creación del esquema lógico de almacenamiento local."""
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
-            # Tabla de historial de chat tradicional
+            # Tabla de historial lineal de interacciones
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS historial_chat (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -24,7 +26,7 @@ class MemoryManager:
                 )
             ''')
             
-            # NUEVA TABLA: Perfil Dinámico del Operador (Variables de Entorno Jarvis)
+            # Tabla de perfil persistente indexado
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS perfil_operador (
                     user_id TEXT PRIMARY KEY,
@@ -35,10 +37,29 @@ class MemoryManager:
             conn.commit()
             conn.close()
         except Exception as e:
-            print(f"[ERROR MEMORIA]: No se pudo inicializar las tablas: {str(e)}")
+            print(f"[CRÍTICO MEMORIA]: Fallo al estructurar tablas: {str(e)}")
+
+    def _verificar_y_restaurar_respaldo(self):
+        """Evita la amnesia de Render. Si la base de datos se borró, restaura el JSON."""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM perfil_operador")
+            if cursor.fetchone()[0] == 0 and os.path.exists(self.backup_path):
+                print("[MEMORIA]: Detectado reinicio de Render. Inyectando respaldo de contexto...")
+                with open(self.backup_path, 'r', encoding='utf-8') as f:
+                    datos_json = f.read()
+                cursor.execute(
+                    "INSERT INTO perfil_operador (user_id, datos_contexto) VALUES (?, ?)",
+                    ("ennio", datos_json)
+                )
+                conn.commit()
+            conn.close()
+        except Exception as e:
+            print(f"[REPARACIÓN]: No se pudo sincronizar el respaldo: {str(e)}")
 
     def save_chat(self, user_id: str, role: str, content: str):
-        """Guarda el flujo físico de la conversación e intenta extraer metadatos del usuario."""
+        """Registra la conversación en curso y analiza variaciones de contexto."""
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -49,57 +70,61 @@ class MemoryManager:
             conn.commit()
             conn.close()
             
-            # Si el usuario nos da un dato de identidad, lo indexamos en el perfil dinámico
             if role == "user":
                 self._actualizar_perfil_automatico(user_id, content)
         except Exception as e:
-            print(f"[ERROR MEMORIA]: Fallo al salvar registro: {str(e)}")
+            print(f"[ERROR REGISTRO]: {str(e)}")
 
     def _actualizar_perfil_automatico(self, user_id: str, text: str):
-        """Escanea de forma pasiva el texto del operador para auto-actualizar su contexto."""
-        # Cargamos el contexto actual
+        """Escáner pasivo heurístico para registrar cambios de entorno."""
         contexto = self.load_profile(user_id)
-        
         modificado = False
         text_lower = text.lower()
 
-        # Almacenamiento heurístico de datos críticos del ecosistema de Ennio
+        # Detección y refresco de variables del operador
         if "mi carro" in text_lower or "el jeep" in text_lower or "grand cherokee" in text_lower:
-            contexto["vehiculo_principal"] = "Jeep Grand Cherokee 2005 WK 4.7L V8 (Acelerador mecánico)"
+            contexto["vehiculo_principal"] = "Jeep Grand Cherokee 2005 WK 4.7L V8 (Acelerador mecánico por guaya)"
             modificado = True
         if "el caliber" in text_lower or "dodge" in text_lower:
             contexto["vehiculo_secundario"] = "Dodge Caliber 2011"
             modificado = True
         if "mi negocio" in text_lower or "frullato" in text_lower:
-            contexto["proyecto_comercial"] = "Frullato (Emprendimiento de bebidas y smoothies)"
+            contexto["proyecto_comercial"] = "Frullato (Emprendimiento físico de bebidas y smoothies)"
             modificado = True
         if "doky" in text_lower or "mi cachorro" in text_lower:
             contexto["mascota"] = "DoKy (Cachorro Husky de 3 meses)"
             modificado = True
         if "la universidad" in text_lower or "urbe" in text_lower or "parcial" in text_lower:
-            contexto["estudios"] = "Ingeniería en Mecatrónica en URBE. Preparando exámenes de lógica, cálculo, álgebra y programación."
+            contexto["estudios"] = "Ingeniería en Mecatrónica en URBE. Preparando evaluaciones de lógica, cálculo, álgebra y programación."
             modificado = True
 
         if modificado:
             self.save_profile(user_id, contexto)
 
     def save_profile(self, user_id: str, data: dict):
-        """Guarda el diccionario de contexto serializado en formato JSON plano."""
+        """Escribe el contexto en la base de datos y genera copia espejo en disco."""
         try:
+            str_datos = json.dumps(data, ensure_ascii=False, indent=4)
+            
+            # Guardado en base de datos
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT INTO perfil_operador (user_id, datos_contexto) VALUES (?, ?) "
                 "ON CONFLICT(user_id) DO UPDATE SET datos_contexto=excluded.datos_contexto",
-                (user_id, json.dumps(data))
+                (user_id, str_datos)
             )
             conn.commit()
             conn.close()
+            
+            # Guardado en archivo espejo de contingencia
+            with open(self.backup_path, 'w', encoding='utf-8') as f:
+                f.write(str_datos)
         except Exception as e:
-            print(f"[ERROR PERFIL]: No se pudo escribir en la matriz de perfil: {str(e)}")
+            print(f"[FALLO PERFIL]: {str(e)}")
 
     def load_profile(self, user_id: str) -> dict:
-        """Recupera la estructura de datos del operador desde la base de datos."""
+        """Extrae el perfil activo desde el almacenamiento de mayor disponibilidad."""
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -110,8 +135,15 @@ class MemoryManager:
                 return json.loads(fila[0])
         except Exception:
             pass
+
+        if os.path.exists(self.backup_path):
+            try:
+                with open(self.backup_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except Exception:
+                pass
         
-        # Perfil base de contingencia inicializado con tus datos esenciales si la tabla está vacía
+        # Bloque base de datos fijas del ecosistema de Ennio
         return {
             "operador": "Ennio Xavier Guglielmucci Colina",
             "ubicacion": "Maracaibo, Venezuela",
@@ -121,7 +153,7 @@ class MemoryManager:
         }
 
     def recall(self, user_id: str) -> str:
-        """Devuelve una cadena formateada limpia lista para inyectarse al prompt del sistema."""
+        """Compila los metadatos planos para inyección directa en el prompt del sistema."""
         perfil = self.load_profile(user_id)
         detalles = [f"{k.upper()}: {v}" for k, v in perfil.items()]
         return " | ".join(detalles)
