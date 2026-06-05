@@ -34,7 +34,8 @@ class TerceroCore:
             "Tu tarea es controlar las acciones del frontend (apertura de entornos multimedia o flujos de trabajo) "
             "y asistir en estrategias de mercado, logística de importación y optimización para el proyecto comercial "
             "del operador. Sé eficiente, directo y mantén estricto el protocolo de comandos ocultos al final de tus "
-            "respuestas si se requiere abrir una URL externa (COMMAND_OPEN: URL)."
+            "respuestas si se requiere abrir una URL externa (COMMAND_OPEN: URL) o si sugieres preparar un entorno de automatización "
+            "en su máquina local inyectando al final el comando de entorno adecuado: COMMAND_ENV: WORKSPACE_TECNICO o COMMAND_ENV: WORKSPACE_COMERCIAL."
         )
 
     def _log_hud(self, origen: str, mensaje: str):
@@ -67,15 +68,13 @@ class TerceroCore:
             return ""
 
     def _analizar_datos_obd2(self, contenido_texto: str) -> str:
-        """Sub-módulo táctico: Escanea el archivo en busca de códigos de falla o lecturas anómalas de sensores."""
+        """Sub-módulo de pre-diagnóstico automotriz predictivo OBD-II."""
         alertas = []
-        # Patrón para capturar códigos de falla estándar (P0107, P0113, etc.)
         codigos_dtc = re.findall(r'\b[PBUC][0-9]{4}\b', contenido_texto.upper())
         
         if codigos_dtc:
             alertas.append(f"Detectados Códigos de Falla Activos (DTC): {', '.join(set(codigos_dtc))}")
         
-        # Escaneo heurístico rápido de flujos críticos comunes de sensores (MAP, IAT, Voltaje)
         if "map" in contenido_texto.lower() or "manifold" in contenido_texto.lower():
             alertas.append("Muestreo de presión absoluta del múltiple (MAP) detectado en el flujo de datos.")
         if "iat" in contenido_texto.lower() or "intake" in contenido_texto.lower():
@@ -86,7 +85,7 @@ class TerceroCore:
         return ""
 
     def _enrutar_agente_heuristico(self, mensaje_usuario: str, contexto_memoria: str) -> str:
-        """Motor de Enrutamiento: Evalúa tanto el input actual como el perfil persistente."""
+        """Motor de Enrutamiento V9.7: Balanceo de carga cognitivo."""
         msg_lower = mensaje_usuario.lower()
         ctx_lower = contexto_memoria.lower()
         
@@ -94,7 +93,7 @@ class TerceroCore:
         score_bravo = 0
         
         keywords_alpha = ["calculo", "algebra", "codigo", "python", "sensor", "iat", "map", "v8", "guaya", "circuito", "ingenieria", "matematicas", "parcial", "voltaje", "ecuacion", "obd", "dtc", "escaner", "fallo"]
-        keywords_bravo = ["abrir", "youtube", "spotify", "frullato", "negocio", "ropa", "logistica", "tienda", "whatsapp", "marca", "comercial"]
+        keywords_bravo = ["abrir", "youtube", "spotify", "frullato", "negocio", "ropa", "logistica", "tienda", "whatsapp", "marca", "comercial", "costo", "flete", "precio"]
         
         for k in keywords_alpha:
             if k in msg_lower: score_alpha += 3
@@ -111,7 +110,27 @@ class TerceroCore:
             return f"{self.prompt_alpha}\n\n[MATRIZ DE CONFIGURACIÓN DEL OPERADOR]: {contexto_memoria}."
         elif score_bravo > score_alpha:
             self._log_hud("SYSTEM", "[NÚCLEO BRAVO ACTIVADO]: Desplegando protocolos de automatización de entorno y gestión.")
-            return f"{self.prompt_bravo}\n\n[MATRIZ DE CONFIGURACIÓN DEL OPERADOR]: {contexto_memoria}."
+            
+            # --- INTERCEPCIÓN FINANCIERA BAJO DEMANDA ---
+            # Si detectamos números y palabras clave de negocio, inyectamos la simulación matemática en las directivas de BRAVO
+            analisis_financiero = ""
+            if any(x in msg_lower for x in ["libras", "flete", "unidades"]) and "import" in msg_lower:
+                # Extracción rápida por fallback o heurística de números para la simulación
+                numeros = [float(s) for s in re.findall(r'-?\d+\.?\d*', msg_lower)]
+                if len(numeros) >= 2:
+                    datos_mock = {"costo_origen": numeros[0], "peso_libras": numeros[1], "unidades": numeros[2] if len(numeros) > 2 else 10}
+                    analisis_financiero = self.memory.calcular_simulacion_bravo("importacion", datos_mock)
+            elif "frullato" in msg_lower and any(x in msg_lower for x in ["receta", "costo", "precio"]):
+                numeros = [float(s) for s in re.findall(r'-?\d+\.?\d*', msg_lower)]
+                if len(numeros) >= 2:
+                    datos_mock = {"materia_prima": numeros[0], "costos_fijos": 0.5, "precio_venta": numeros[1]}
+                    analisis_financiero = self.memory.calcular_simulacion_bravo("frullato", datos_mock)
+            
+            prompt_final_bravo = f"{self.prompt_bravo}\n\n[MATRIZ DE CONFIGURACIÓN DEL OPERADOR]: {contexto_memoria}."
+            if analisis_financiero:
+                prompt_final_bravo += f"\n\n{analisis_financiero}\nUtiliza estos datos procesados para estructurar tu respuesta de negocio."
+            return prompt_final_bravo
+            # ---------------------------------------------
         else:
             self._log_hud("SYSTEM", "[CORE MAINFRAME]: Carga equilibrada. Ejecutando enrutamiento conversacional estándar.")
             return f"Eres Tercero OS, un mainframe de inteligencia artificial avanzada con protocolo Jarvis integrado. Asiste al operador de forma clara y óptima. Variables de entorno: {contexto_memoria}."
@@ -155,7 +174,6 @@ class TerceroCore:
                         try:
                             with open(ruta_completa, 'r', encoding='utf-8', errors='ignore') as f:
                                 contenido_extraido = f.read(25000)
-                            # Activación del sub-módulo de pre-diagnóstico automotriz si es un archivo plano
                             pre_analisis_automotriz = self._analizar_datos_obd2(contenido_extraido)
                         except Exception as e:
                             contenido_extraido = f"[Fallo al leer archivo de texto: {str(e)}]"
@@ -191,7 +209,7 @@ class TerceroCore:
                 answer = self.llm.chat(messages)
             except Exception as e:
                 self._log_hud("CRITICAL", f"ANOMALÍA DETECTADA: API caída ({str(e)}). Activando Agente de Emergencia.")
-                answer = self._ejecutar_reshape_contingencia(message)
+                answer = self._ejecutar_respuesta_contingencia(message)
 
             self.memory.save_chat(user_id, "user", message)
             self.memory.save_chat(user_id, "assistant", answer)
@@ -203,4 +221,4 @@ class TerceroCore:
             return {"text": answer, "audio_file": audio_filename}
 
         except Exception as e:
-            return {"text": f"Error crítico en Tercero Core V9.4: {str(e)}", "audio_file": None}
+            return {"text": f"Error crítico en Tercero Core V9.7: {str(e)}", "audio_file": None}
