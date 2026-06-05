@@ -19,20 +19,21 @@ class TerceroCore:
         # Atributo dinámico para el canal cuántico SSE (inyectado desde app.py)
         self.enviar_log_external = None
         
-        # PROMPTS DE LOS AGENTES ESPECIALISTAS DE DANIEL
+        # PROMPTS MAESTROS DE LOS AGENTES ESPECIALISTAS
         self.prompt_alpha = (
-            "Eres el Agente ALPHA, el núcleo de ingeniería y mecatrónica de Tercero OS. "
-            "Tu especialidad es el análisis de firmware, electrónica de control, lógica de programación, "
-            "cálculo avanzado y diagnóstico automotriz de precisión. Cuando el operador Ennio te consulte "
-            "sobre estos temas, responde con el mayor rigor técnico posible, desglosando ecuaciones o algoritmos."
+            "Eres el Agente ALPHA, el núcleo de ingeniería avanzada, cálculo y mecatrónica de Tercero OS. "
+            "Tu especialidad es el análisis de firmware, electrónica de control, lógica de programación (Python/C++), "
+            "cálculo matemático de precisión y diagnóstico automotriz de alto nivel. Cuando el operador te consulte "
+            "o envíe un archivo sobre estos temas, responde con el mayor rigor técnico posible, desglosando ecuaciones, "
+            "algoritmos o flujos de señales paso a paso."
         )
         
         self.prompt_bravo = (
-            "Eres el Agente BRAVO, la interfaz de automatización, gestión y operaciones de Tercero OS. "
-            "Tu tarea es controlar las acciones del frontend (como abrir pestañas de YouTube o Spotify) "
-            "y asistir en estrategias, logística de importación y optimización de proyectos comerciales como Frullato. "
-            "Sé eficiente, enfocado en resultados y mantén siempre el protocolo de comandos ocultos "
-            "al final de tus respuestas si Ennio te pide abrir un sitio (COMMAND_OPEN: URL)."
+            "Eres el Agente BRAVO, la interfaz de automatización, operaciones comerciales y gestión de Tercero OS. "
+            "Tu tarea es controlar las acciones del frontend (apertura de entornos multimedia o flujos de trabajo) "
+            "y asistir en estrategias de mercado, logística de importación y optimización para el proyecto comercial "
+            "del operador. Sé eficiente, directo y mantén estricto el protocolo de comandos ocultos al final de tus "
+            "respuestas si se requiere abrir una URL externa (COMMAND_OPEN: URL)."
         )
 
     def _log_hud(self, origen: str, mensaje: str):
@@ -64,21 +65,40 @@ class TerceroCore:
             print(f"[ERROR BINARIO]: Fallo al codificar imagen: {str(e)}")
             return ""
 
-    def _enrutar_agente(self, mensaje_usuario: str, contexto_memoria: str) -> str:
+    def _enrutar_agente_heuristico(self, mensaje_usuario: str, contexto_memoria: str) -> str:
+        """Motor de Enrutamiento V9.3: Evalúa tanto el input actual como el perfil persistente."""
         msg_lower = mensaje_usuario.lower()
+        ctx_lower = contexto_memoria.lower()
         
-        componentes_tecnicos = ["calculo", "algebra", "codigo", "python", "sensor", "iat", "map", "v8", "guaya", "circuito", "ingenieria", "matematicas", "parcial"]
-        componentes_gestion = ["abrir", "youtube", "spotify", "frullato", "negocio", "ropa", "logistica", "tienda", "whatsapp"]
+        # Diccionarios de peso cognitivo para balanceo de carga
+        score_alpha = 0
+        score_bravo = 0
         
-        if any(keyword in msg_lower for keyword in componentes_tecnicos):
-            self._log_hud("SYSTEM", "[NÚCLEO ALPHA]: Tomando control del procesador lógico.")
-            return f"{self.prompt_alpha}\n\n[CONTEXTO HISTÓRICO DEL OPERADOR]: {contexto_memoria}."
-        elif any(keyword in msg_lower for keyword in componentes_gestion):
-            self._log_hud("SYSTEM", "[NÚCLEO BRAVO]: Activando protocolos de automatización y despliegue corporativo.")
-            return f"{self.prompt_bravo}\n\n[CONTEXTO HISTÓRICO DEL OPERADOR]: {contexto_memoria}."
+        # 1. Evaluación por términos técnicos explícitos en el comando actual
+        keywords_alpha = ["calculo", "algebra", "codigo", "python", "sensor", "iat", "map", "v8", "guaya", "circuito", "ingenieria", "matematicas", "parcial", "voltaje", "ecuacion"]
+        keywords_bravo = ["abrir", "youtube", "spotify", "frullato", "negocio", "ropa", "logistica", "tienda", "whatsapp", "marca", "comercial"]
+        
+        for k in keywords_alpha:
+            if k in msg_lower: score_alpha += 3
+        for k in keywords_bravo:
+            if k in msg_lower: score_bravo += 3
+            
+        # 2. Evaluación del Contexto Persistente en Memoria (Evita redundancias)
+        if "mecatronica" in ctx_lower or "urbe" in ctx_lower:
+            score_alpha += 1
+        if "frullato" in ctx_lower or "comercial" in ctx_lower:
+            score_bravo += 1
+
+        # Despacho lógico basado en el score mayor
+        if score_alpha > score_bravo:
+            self._log_hud("SYSTEM", "[NÚCLEO ALPHA ACTIVADO]: Sincronizando matriz de ingeniería y control de variables.")
+            return f"{self.prompt_alpha}\n\n[MATRIZ DE CONFIGURACIÓN DEL OPERADOR]: {contexto_memoria}."
+        elif score_bravo > score_alpha:
+            self._log_hud("SYSTEM", "[NÚCLEO BRAVO ACTIVADO]: Desplegando protocolos de automatización de entorno y gestión.")
+            return f"{self.prompt_bravo}\n\n[MATRIZ DE CONFIGURACIÓN DEL OPERADOR]: {contexto_memoria}."
         else:
-            self._log_hud("SYSTEM", "[CORE MAINFRAME]: Balanceando carga en canal de conversación general.")
-            return f"Eres Tercero OS, modo Jarvis activado. Eres un mainframe de inteligencia avanzada. Información de usuario: {contexto_memoria}."
+            self._log_hud("SYSTEM", "[CORE MAINFRAME]: Carga equilibrada. Ejecutando enrutamiento conversacional estándar.")
+            return f"Eres Tercero OS, un mainframe de inteligencia artificial avanzada con protocolo Jarvis integrado. Asiste al operador de forma clara y óptima. Variables de entorno: {contexto_memoria}."
 
     def _ejecutar_respuesta_contingencia(self, mensaje_usuario: str) -> str:
         """Agente de Resiliencia Pasiva: Ejecuta una respuesta analítica si la API de Groq cae por completo."""
@@ -88,9 +108,9 @@ class TerceroCore:
             if "spotify" in msg_lower: return "Protocolo de contingencia activado. Reenrutando entorno multimedia.\nCOMMAND_OPEN: https://open.spotify.com"
         
         return (
-            "[TERCERO OS - NÚCLEO DE EMERGENCIA]: Ennio, he detectado una interrupción crítica en los servidores principales de Groq. "
+            "[TERCERO OS - NÚCLEO DE EMERGENCIA]: Operador, he detectado una interrupción crítica en los servidores principales. "
             "He aislado la anomalía y activado el protocolo de resiliencia pasiva. Mis funciones de automatización e historial permanecen en línea. "
-            "¿Deseas que verifiquemos los logs locales del sistema mientras se estabiliza el enlace de red?"
+            "¿Deseas que verifiquemos los logs locales del sistema?"
         )
 
     def chat(self, user_id: str, message: str) -> dict:
@@ -115,7 +135,7 @@ class TerceroCore:
                         if ext == '.png': tipo_imagen = "image/png"
                         if ext == '.webp': tipo_imagen = "image/webp"
                         imagen_base64 = self._codificar_imagen_base64(ruta_completa)
-                        message = f"[IMAGEN INYECTADA: {nombre_archivo}] Ennio ha suministrado una imagen para análisis visual inmediato."
+                        message = f"[IMAGEN INYECTADA: {nombre_archivo}] El operador ha suministrado un componente visual para análisis inmediato."
                     elif ext in ['.txt', '.py', '.js', '.json', '.html', '.css', '.md', '.log']:
                         try:
                             with open(ruta_completa, 'r', encoding='utf-8', errors='ignore') as f:
@@ -123,14 +143,15 @@ class TerceroCore:
                         except Exception as e:
                             contenido_extraido = f"[Fallo al leer archivo de texto: {str(e)}]"
                     elif ext == '.pdf':
-                        contenido_extraido = f"[Documento PDF indexado: '{nombre_archivo}']. Flujo de datos cargado para escaneo corporativo/académico."
+                        contenido_extraido = f"[Documento PDF indexado: '{nombre_archivo}']. Flujo de datos cargado para escaneo de información corporativa o académica."
                     else:
                         contenido_extraido = f"[Matriz de datos no soportada: '{nombre_archivo}']."
 
-            system_content = self._enrutar_agente(message, memory)
+            # Inyección del nuevo motor heurístico contextual
+            system_content = self._enrutar_agente_heuristico(message, memory)
             
             if contenido_extraido:
-                system_content += f"\n\n[DATOS EXTRAÍDOS DEL ARCHIVO]:\n{contenido_extraido}"
+                system_content += f"\n\n[DATOS EXTRAÍDOS DEL ARCHIVO ATACHADO]:\n{contenido_extraido}"
 
             user_content_structure = []
             if imagen_base64:
@@ -148,13 +169,11 @@ class TerceroCore:
             user_message = {"role": "user", "content": user_content_structure}
             messages = [system_message] + history + [user_message]
             
-            # --- SUPERVISOR DE RESILIENCIA ---
             try:
                 answer = self.llm.chat(messages)
             except Exception as e:
                 self._log_hud("CRITICAL", f"ANOMALÍA DETECTADA: API de procesamiento caída ({str(e)}). Desviando flujo al Agente de Emergencia.")
                 answer = self._ejecutar_respuesta_contingencia(message)
-            # ----------------------------------
 
             self.memory.save_chat(user_id, "user", message)
             self.memory.save_chat(user_id, "assistant", answer)
@@ -166,4 +185,4 @@ class TerceroCore:
             return {"text": answer, "audio_file": audio_filename}
 
         except Exception as e:
-            return {"text": f"Error crítico irreparable en Tercero Core V9.1: {str(e)}", "audio_file": None}
+            return {"text": f"Error crítico irreparable en Tercero Core V9.3: {str(e)}", "audio_file": None}
