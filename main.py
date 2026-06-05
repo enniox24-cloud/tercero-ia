@@ -1,129 +1,128 @@
 import os
-import shutil
-import uvicorn
-import sqlite3
-import json
-from fastapi import FastAPI, UploadFile, File, Form
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
+import queue
+from flask import Flask, request, jsonify, render_template, Response
 from backend.core import TerceroCore
 
-app = FastAPI()
+app = Flask(__name__, template_folder="../frontend", static_folder="../frontend")
+
+# Inicialización del núcleo central de Tercero OS
 core = TerceroCore()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"]
-)
+# Cola global asíncrona para transmitir logs en tiempo real al HUD
+log_queue = queue.Queue()
 
-# Configuración estricta de directorios en el Mainframe
-UPLOAD_DIR = "uploads"
-FILES_DIR = os.path.join(UPLOAD_DIR, "files")
-RESPONSES_DIR = os.path.join(UPLOAD_DIR, "responses")
-DB_PATH = "tercero_memory.db"
+def enviar_log_al_hud(origen: str, mensaje: str):
+    """Inserta una señal de telemetría en la cola para que el frontend la imprima al instante."""
+    payload = {"origen": origen, "texto": mensaje}
+    log_queue.put(payload)
 
-os.makedirs(FILES_DIR, exist_ok=True)
-os.makedirs(RESPONSES_DIR, exist_ok=True)
+# Inyectamos la función de logs dentro del core de forma dinámica para no romper el acoplamiento
+core.enviar_log_external = enviar_log_al_hud
 
-# ========================================================
-# MOTOR DE MEMORIA CUÁNTICA PERSISTENTE (SQLite)
-# ========================================================
-def inicializar_base_datos():
-    """Crea la tabla de memoria si no existe en el mainframe."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS historial_chat (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id TEXT,
-            role TEXT,
-            content TEXT,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    conn.commit()
-    conn.close()
+@app.route('/')
+def index():
+    """Sirve la interfaz del HUD Jarvis desde el frontend."""
+    return render_template('index.html')
 
-def guardar_en_memoria(user_id: str, role: str, content: str):
-    """Registra una transmisión de datos de manera física en SQLite."""
+@app.route('/chat', py-yield-supported=True, methods=['POST'])
+def chat():
+    """Procesa las interacciones de texto y voz del operador."""
     try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute(
-            "INSERT INTO historial_chat (user_id, role, content) VALUES (?, ?, ?)",
-            (user_id, role, content)
-        )
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        print(f"[ERROR SQLITE WRITE]: No se pudo escribir en la memoria: {str(e)}")
-
-# Inicializamos el mainframe de memoria al arrancar la aplicación
-inicializar_base_datos()
-# ========================================================
-
-# Montar la carpeta raíz de almacenamiento estático para descargas de audio y visuales
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
-
-@app.get("/")
-async def root():
-    return FileResponse("index.html")
-
-# Endpoint optimizado para el Chat del HUD con prevención de duplicación
-@app.post("/chat")
-async def chat(data: dict):
-    if not core: 
-        return {"text": "Sistema offline.", "audio_url": None}
-    
-    user_id = data.get("user_id", "ennio")
-    mensaje_usuario = data.get("message", "")
-    
-    if not mensaje_usuario:
-        return {"text": "Paquete de datos vacío.", "audio_url": None}
-
-    # 1. Procesamos la respuesta pasándole el mensaje directamente al núcleo cognitivo
-    res = core.chat(user_id, mensaje_usuario)
-    respuesta_texto = res.get("text", "")
-    
-    # 2. Una vez que el Core responde de forma aislada, guardamos AMBOS flujos en SQLite
-    guardar_en_memoria(user_id, "user", mensaje_usuario)
-    if respuesta_texto:
-        guardar_en_memoria(user_id, "assistant", respuesta_texto)
-    
-    audio_file = res.get("audio_file")
-    audio_url = f"/uploads/responses/{audio_file}" if audio_file else None
-    
-    return {"text": respuesta_texto, "audio_url": audio_url}
-
-# Endpoint para inyección en la matriz de archivos
-@app.post("/upload")
-async def upload_file(user_id: str = Form(...), file: UploadFile = File(...)):
-    file_path = os.path.join(FILES_DIR, file.filename)
-    
-    # Almacenamiento físico del script o log en la carpeta compartida
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    # Formateamos el interceptor exacto que TerceroCore está esperando leer con Regex
-    prompt_archivo = f"El usuario ha cargado el archivo '{file.filename}'. Analízalo y confirma su recepción."
-    
-    # Transmisión directa al núcleo
-    res = core.chat(user_id, prompt_archivo)
-    respuesta_texto = res.get("text", "")
-    
-    # Guardamos los registros históricos de la carga del archivo
-    guardar_en_memoria(user_id, "user", f"[Archivo Inyectado al Mainframe: {file.filename}]")
-    if respuesta_texto:
-        guardar_en_memoria(user_id, "assistant", respuesta_texto)
+        datos = request.get_json()
+        if not datos:
+            return jsonify({"text": "Error: Datos de transmisión corruptos.", "audio_url": None}), 400
+            
+        user_id = datos.get("user_id", "ennio")
+        mensaje = datos.get("message", "")
         
-    audio_file = res.get("audio_file")
-    audio_url = f"/uploads/responses/{audio_file}" if audio_file else None
-    
-    return {"status": "success", "filename": file.filename, "text": respuesta_texto, "audio_url": audio_url}
+        enviar_log_al_hud("SYSTEM", "Abriendo socket de comunicación... Analizando variables de entorno.")
+        
+        # Interceptamos si hay palabras clave para alertar al HUD antes de que el LLM responda
+        msg_lower = mensaje.lower()
+        if any(k in msg_lower for k in ["calculo", "algebra", "codigo", "python", "sensor", "iat", "map", "v8", "guaya"]):
+            enviar_log_al_hud("SYSTEM", "Alerta de datos técnicos detectada. Despachando Agente ALPHA.")
+        elif any(k in msg_lower for k in ["abrir", "youtube", "spotify", "frullato", "negocio", "ropa", "whatsapp"]):
+            enviar_log_al_hud("SYSTEM", "Comando de control/gestión detectado. Despachando Agente BRAVO.")
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+        # Ejecución del procesamiento en el Core
+        resultado = core.chat(user_id, mensaje)
+        
+        # Estructuramos la URL pública para el archivo de audio generado
+        audio_url = f"/audio/{resultado['audio_file']}" if resultado.get("audio_file") else None
+        
+        return jsonify({
+            "text": resultado["text"],
+            "audio_url": audio_url
+        })
+        
+    except Exception as e:
+        enviar_log_al_hud("SYSTEM", f"CRITICAL FAILURE en pasarela web: {str(e)}")
+        return jsonify({"text": f"Fallo de enlace en app.py: {str(e)}", "audio_url": None}), 500
+
+@app.route('/upload', methods=['POST'])
+def upload():
+    """Gestiona la inyección multimedia (Capturas de pantalla, códigos, PDFs)."""
+    try:
+        user_id = request.form.get("user_id", "ennio")
+        archivo = request.files.get("file")
+        
+        if not archivo:
+            return jsonify({"text": "Error: Matriz de archivo vacía.", "audio_url": None}), 400
+            
+        nombre_archivo = archivo.filename
+        ruta_destino = os.path.join(core.files_dir, nombre_archivo)
+        
+        # Aseguramos el directorio físico en el contenedor de Render
+        os.makedirs(core.files_dir, exist_ok=True)
+        archivo.save(ruta_destino)
+        
+        enviar_log_al_hud("SYSTEM", f"Archivo '{nombre_archivo}' inyectado con éxito en disco. Decodificando metadatos visuales...")
+        
+        # Simulamos la orden enviando el trigger estructurado al core
+        mensaje_estructurado = f"El usuario ha cargado el archivo '{nombre_archivo}' para su análisis inmediato."
+        resultado = core.chat(user_id, mensaje_estructurado)
+        
+        audio_url = f"/audio/{resultado['audio_file']}" if resultado.get("audio_file") else None
+        
+        return jsonify({
+            "text": resultado["text"],
+            "audio_url": audio_url
+        })
+        
+    except Exception as e:
+        enviar_log_al_hud("SYSTEM", f"Fallo en inyector multimedia: {str(e)}")
+        return jsonify({"text": f"Fallo crítico en upload: {str(e)}", "audio_url": None}), 500
+
+@app.route('/audio/<filename>')
+def servir_audio(filename):
+    """Transmite los buffers binarios de voz al reproductor del HUD."""
+    ruta_audio = os.path.join(os.getcwd(), filename)
+    if os.path.exists(ruta_audio):
+        def generar_stream():
+            with open(ruta_audio, "rb") as f:
+                data = f.read(1024)
+                while data:
+                    yield data
+                    data = f.read(1024)
+        return Response(generar_stream(), mimetype="audio/mp3")
+    else:
+        return "Audio no localizado en el búfer temporal", 404
+
+# ========================================================
+# NUEVO ENDPOINT CUÁNTICO: TRANSMISIÓN DE LOGS EN VIVO (SSE)
+# ========================================================
+@app.route('/stream-telemetry')
+def stream_telemetry():
+    """Mantiene un canal abierto para enviar señales en vivo al HUD del frontend."""
+    def event_stream():
+        while True:
+            # Espera indefinidamente hasta que entre una nueva señal de log
+            payload = log_queue.get()
+            yield f"data: {json.dumps(payload)}\n\n"
+            
+    return Response(event_stream(), mimetype="text/event-stream")
+
+if __name__ == '__main__':
+    # Configuración de puerto adaptable para la infraestructura de Render
+    puerto = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=puerto, debug=False)
