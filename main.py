@@ -61,22 +61,6 @@ def guardar_en_memoria(user_id: str, role: str, content: str):
     except Exception as e:
         print(f"[ERROR SQLITE WRITE]: No se pudo escribir en la memoria: {str(e)}")
 
-def obtener_historial_memoria(user_id: str, limite: int = 15):
-    """Recupera los últimos paquetes de datos ordenados cronológicamente."""
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT role, content FROM historial_chat WHERE user_id = ? ORDER BY id DESC LIMIT ?",
-            (user_id, limite)
-        )
-        filas = cursor.fetchall()
-        conn.close()
-        # Invertimos el orden para conservar la línea temporal del chat
-        return [{"role": f[0], "content": f[1]} for f in reversed(filas)]
-    except Exception:
-        return []
-
 # Inicializamos el mainframe de memoria al arrancar la aplicación
 inicializar_base_datos()
 # ========================================================
