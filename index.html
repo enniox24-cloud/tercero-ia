@@ -28,7 +28,6 @@
             position: relative;
         }
 
-        /* Fondo Dinámico Estilo Interfaz de Defensa */
         body::before {
             content: "";
             position: absolute;
@@ -51,7 +50,6 @@
             letter-spacing: 2px;
         }
 
-        /* Contenedor Holográfico de Consola */
         #console-container {
             flex: 1;
             border: 1px solid var(--panel-border);
@@ -77,7 +75,6 @@
         .critical-log { color: var(--listening-red); font-weight: bold; text-shadow: 0 0 10px var(--listening-red); }
         .activation-log { color: #52c41a; font-weight: bold; text-shadow: 0 0 12px rgba(82, 196, 26, 0.6); }
 
-        /* Panel de Control Inferior Estilizado */
         #input-panel {
             display: flex;
             gap: 12px;
@@ -125,7 +122,6 @@
             transform: translateY(-1px);
         }
 
-        /* Núcleo de Energía Visual (Indicador de Estado de Voz) */
         #voice-indicator {
             width: 14px;
             height: 14px;
@@ -146,7 +142,6 @@
 
         #hidden-file-input { display: none; }
 
-        /* Animaciones del Sistema */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
@@ -192,24 +187,22 @@
             if (e.key === 'Enter') enviarComando();
         });
 
-        // ========================================================
-        // ENLACE CUÁNTICO SSE: RECEPTOR DE LOGS EN VIVO (CORREGIDO)
-        // ========================================================
+        // Enlace SSE alineado con la ruta de main.py
         const telemetrySource = new EventSource('/stream_telemetria');
 
         telemetrySource.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            imprimirLog(data.origen, data.mensaje);
+            try {
+                const data = JSON.parse(event.data);
+                imprimirLog(data.origen, data.mensaje || data.texto);
+            } catch(e) {}
         };
 
         telemetrySource.onerror = function() {
             console.log("[TELEMETRÍA]: Intentando reconectar socket SSE...");
         };
 
-        // ========================================================
-        // INTERCEPTOR DE AUTOMATIZACIÓN DE APLICACIONES (JARVIS MODE)
-        // ========================================================
         function procesarComandosFronteEnd(textoRespuesta) {
+            if (!textoRespuesta) return "";
             let textoLimpio = textoRespuesta;
             const regexComando = /COMMAND_OPEN:\s*(https?:\/\/[^\s]+)/i;
             const match = textoRespuesta.match(regexComando);
@@ -226,14 +219,10 @@
             return textoLimpio;
         }
 
-        // ========================================================
-        // ENVÍO DE COMANDOS CON DETENCIÓN ASÍNCRONA (CORREGIDO)
-        // ========================================================
         async function enviarComando(textoDictado = null) {
             const cmd = textoDictado ? textoDictado.trim() : inputCommand.value.trim();
             if (!cmd) return;
 
-            // PARADA DE EMERGENCIA ASÍNCRONA
             if (!audioPlayer.paused) {
                 audioPlayer.pause();
                 audioPlayer.currentTime = 0;
@@ -246,6 +235,7 @@
             imprimirLog('USER', cmd);
 
             try {
+                // Fetch apuntando al endpoint real /api/chat estructurado en main.py
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -253,13 +243,11 @@
                 });
                 const data = await response.json();
                 
-                const textoFinal = procesarComandosFronteEnd(data.text);
+                // Mapeo seguro del texto de respuesta enviado por TerceroCore
+                const msgTexto = data.text || data.mensaje || JSON.stringify(data);
+                const textoFinal = procesarComandosFronteEnd(msgTexto);
                 imprimirLog('TERCERO', textoFinal);
 
-                if (data.audio_file) {
-                    audioPlayer.src = "/frontend/static/" + data.audio_file;
-                    audioPlayer.play().catch(e => console.log("Audio play deferred"));
-                }
             } catch (err) {
                 imprimirLog('CRITICAL', 'CRITICAL ERROR: Enlace cognitivo con el servidor interrumpido.');
             }
@@ -286,13 +274,10 @@
                 });
                 const data = await response.json();
 
-                const textoFinal = procesarComandosFronteEnd(data.text);
+                const msgTexto = data.text || data.mensaje || JSON.stringify(data);
+                const textoFinal = procesarComandosFronteEnd(msgTexto);
                 imprimirLog('TERCERO', textoFinal);
 
-                if (data.audio_file) {
-                    audioPlayer.src = "/frontend/static/" + data.audio_file;
-                    audioPlayer.play().catch(e => console.log("Audio play deferred"));
-                }
             } catch (err) {
                 imprimirLog('CRITICAL', 'CRITICAL ERROR: Fallo de inyección en la matriz multimedia.');
             }
@@ -323,9 +308,6 @@
             consoleContainer.scrollTop = consoleContainer.scrollHeight;
         }
 
-        // ========================================================
-        // ESCUCHA CONTINUA INTELIGENTE
-        // ========================================================
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
             const recognition = new SpeechRecognition();
