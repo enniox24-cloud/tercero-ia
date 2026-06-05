@@ -1,157 +1,122 @@
 import os
-import queue
 import time
 import threading
-import json
-from flask import Flask, request, jsonify, render_template, Response
+from flask import Flask, render_template, request, jsonify, Response
+
+# IMPORTACIÓN DE LOS COMPONENTES PRINCIPALES DEL MAINFRAME
 from backend.core import TerceroCore
+from backend.plugins.environment import EnvironmentPlugin
 
-app = Flask(__name__, template_folder="../frontend", static_folder="../frontend")
+app = Flask(__name__, template_folder="frontend/templates", static_folder="frontend/static")
 
-# Inicialización del núcleo central de Tercero OS
+# Inicialización de los núcleos centrales
 core = TerceroCore()
+env_monitor = EnvironmentPlugin()
 
-# Cola global asíncrona para transmitir logs en tiempo real al HUD
-log_queue = queue.Queue()
+# Lista de suscriptores activos para el canal SSE de telemetría
+clientes_sse = []
 
 def enviar_log_al_hud(origen: str, mensaje: str):
-    """Inserta una señal de telemetría en la cola para que el frontend la imprima al instante."""
-    payload = {"origen": origen, "texto": mensaje}
-    log_queue.put(payload)
+    """Escribe de forma segura en el flujo SSE para actualizar el HUD en vivo."""
+    payload = f"data: {json.dumps({'origen': origen, 'mensaje': mensaje})}\n\n"
+    for cliente in clientes_sse:
+        try:
+            cliente.put(payload)
+        except Exception:
+            pass
 
-# Inyectamos la función de logs dentro del core de forma dinámica
+# Vinculamos el disparador de logs del Core con nuestro emisor local SSE
 core.enviar_log_external = enviar_log_al_hud
 
-# ========================================================
-# HILO ASÍNCRONO DE TELEMETRÍA PROACTIVA (DEMONIO CRON)
-# ========================================================
+
+# =====================================================================
+# DEMONIO DE FONDO: HILO PERPETUO DE TELEMETRÍA Y CONTROL DE ENTORNO
+# =====================================================================
 def daemon_tareas_segundo_plano():
-    """Bucle perpetuo de fondo que vigila el sistema y envía alertas proactivas al HUD."""
-    print("[SISTEMA]: Demonio de resiliencia y tareas asíncronas inicializado.")
-    time.sleep(10)  # Espera inicial a que el frontend se conecte al SSE
+    """Hilo secundario perpetuo. Gestiona alertas de tiempo y variables ambientales."""
+    print("[SISTEMA]: Demonio de fondo iniciado. Monitoreando entorno operativo...")
     
-    contador = 0
+    # Contador de ciclos para no saturar la API meteorológica (consultas espaciadas)
+    ciclo = 0
+    
     while True:
         try:
-            # Cada 30 minutos de ejecución simula un reporte de estado del Mainframe
-            if contador % 60 == 0 and contador > 0:
-                enviar_log_al_hud("SYSTEM", "CRON_DAEMON: Diagnóstico térmico estable. Núcleos cuánticos operando al 100%.")
-            
-            # Alertas proactivas simuladas basadas en el contexto del operador (puedes expandir esto con fechas reales)
-            # Ejemplo de alerta de rutina matutina o recordatorio académico inyectado al HUD
-            ahora = time.strftime("%H:%M")
-            if ahora == "08:00":
-                enviar_log_al_hud("ACTIVATION", "CRON_ALERT: Bloque académico activo. Revisar asignaciones de Ingeniería en Mecatrónica (URBE).")
-            elif ahora == "14:00":
-                enviar_log_al_hud("ACTIVATION", "CRON_ALERT: Bloque comercial activo. Monitorear inventario y recetas en Frullato.")
+            # 1. Monitoreo del Reloj y Alertas Horarias Estándar
+            hora_actual = time.strftime("%H:%M")
+            if hora_actual == "08:00":
+                enviar_log_al_hud("SYSTEM", "Secuencia de inicio matutina activa. Buenos días, operador.")
+                time.sleep(60) # Evita doble disparo en el mismo minuto
                 
-            time.sleep(30)  # Ciclo de verificación cada 30 segundos
-            contador += 1
-        except Exception as e:
-            print(f"[ERROR DAEMON]: {str(e)}")
+            # 2. Verificación del Módulo Ambiental de Maracaibo (Cada 30 ciclos de bucle)
+            if ciclo % 30 == 0:
+                telemetria_clima = env_monitor.obtener_telemetria_maracaibo()
+                
+                # Si el estado no es estable, inyectamos la alerta directo a la pantalla
+                if telemetria_clima["estado_critico"] != "ESTABLE":
+                    enviar_log_al_hud(
+                        "ENVIRONMENT", 
+                        f"ALERTA ATMOSFÉRICA [{telemetria_clima['temperatura']}]: {telemetria_clima['reporte_diagnostico']}"
+                    )
+                else:
+                    # Log nominal opcional para verificar que el escáner sigue vivo
+                    enviar_log_al_hud("ENVIRONMENT", f"Monitoreo nominal. Maracaibo: {telemetria_clima['temperatura']}.")
+            
+            # Control de incremento y reset de desbordamiento de ciclo
+            ciclo = (ciclo + 1) if ciclo < 3000 else 0
+            
+            # Latencia base del bucle del demonio (Revisión cada 10 segundos)
             time.sleep(10)
+            
+        except Exception as e:
+            print(f"[ANOMALÍA EN DEMONIO]: Error crítico en el hilo de fondo: {str(e)}")
+            time.sleep(15) # Espera de resiliencia antes de reiniciar ciclo
 
-# Lanzamos el demonio de fondo en un hilo aislado para que no bloquee las peticiones HTTP de Flask
-thread_proactivo = threading.Thread(target=daemon_tareas_segundo_plano, daemon=True)
-thread_proactivo.start()
-# ========================================================
+# Lanzamiento del hilo asíncronono inmune a los requests del cliente
+hilo_demonio = threading.Thread(target=daemon_tareas_segundo_plano, daemon=True)
+hilo_demonio.start()
 
+
+# =====================================================================
+# RUTAS DE CONTROL DEL SERVIDOR FLASK
+# =====================================================================
 @app.route('/')
 def index():
-    """Sirve la interfaz del HUD Jarvis desde el frontend."""
+    """Despliega la consola de la interfaz gráfica principal (HUD)."""
     return render_template('index.html')
 
-@app.route('/chat', methods=['POST'])
-def chat():
-    """Procesa las interacciones de texto y voz del operador."""
-    try:
-        datos = request.get_json()
-        if not datos:
-            return jsonify({"text": "Error: Datos de transmisión corruptos.", "audio_url": None}), 400
+@app.route('/api/chat', methods=['POST'])
+def api_chat():
+    """Canal de comunicación síncrono con el Core de Tercero."""
+    data = request.json or {}
+    user_message = data.get("message", "")
+    user_id = data.get("user_id", "ennio")
+    
+    if not user_message:
+        return jsonify({"error": "Matriz de mensaje vacía"}), 400
+        
+    # El core procesa el enrutamiento heurístico, archivos e historial
+    respuesta_mainframe = core.chat(user_id, user_message)
+    return jsonify(respuesta_mainframe)
+
+@app.route('/stream_telemetria')
+def stream_telemetria():
+    """Punto de acoplamiento SSE (Server-Sent Events) para el HUD del frontend."""
+    import queue
+    def generar_flujo():
+        q = queue.Queue()
+        clientes_sse.append(q)
+        try:
+            # Enviamos ping inicial de sincronización con el cliente web
+            yield f"data: {json.dumps({'origen': 'SYSTEM', 'mensaje': 'Enlace cuántico SSE establecido con el HUD.'})}\n\n"
+            while True:
+                msg = q.get()
+                yield msg
+        except GeneratorExit:
+            clientes_sse.remove(q)
             
-        user_id = datos.get("user_id", "ennio")
-        mensaje = datos.get("message", "")
-        
-        enviar_log_al_hud("SYSTEM", "Abriendo socket de comunicación... Analizando variables de entorno.")
-        
-        # Interceptamos palabras clave para alertar al HUD antes de que el LLM responda
-        msg_lower = mensaje.lower()
-        if any(k in msg_lower for k in ["calculo", "algebra", "codigo", "python", "sensor", "iat", "map", "v8", "guaya", "matematicas", "parcial"]):
-            enviar_log_al_hud("SYSTEM", "Alerta de datos técnicos detectada. Despachando Agente ALPHA.")
-        elif any(k in msg_lower for k in ["abrir", "youtube", "spotify", "frullato", "negocio", "ropa", "logistica", "tienda", "whatsapp"]):
-            enviar_log_al_hud("SYSTEM", "Comando de control/gestión detectado. Despachando Agente BRAVO.")
-
-        # Ejecución del procesamiento en el Core
-        resultado = core.chat(user_id, mensaje)
-        
-        audio_url = f"/audio/{resultado['audio_file']}" if resultado.get("audio_file") else None
-        
-        return jsonify({
-            "text": resultado["text"],
-            "audio_url": audio_url
-        })
-        
-    except Exception as e:
-        enviar_log_al_hud("SYSTEM", f"CRITICAL FAILURE en pasarela web: {str(e)}")
-        return jsonify({"text": f"Fallo de enlace en app.py: {str(e)}", "audio_url": None}), 500
-
-@app.route('/upload', methods=['POST'])
-def upload():
-    """Gestiona la inyección multimedia (Capturas de pantalla, códigos, PDFs)."""
-    try:
-        user_id = request.form.get("user_id", "ennio")
-        archivo = request.files.get("file")
-        
-        if not archivo:
-            return jsonify({"text": "Error: Matriz de archivo vacía.", "audio_url": None}), 400
-            
-        nombre_archivo = archivo.filename
-        ruta_destino = os.path.join(core.files_dir, nombre_archivo)
-        
-        os.makedirs(core.files_dir, exist_ok=True)
-        archivo.save(ruta_destino)
-        
-        enviar_log_al_hud("SYSTEM", f"Archivo '{nombre_archivo}' inyectado con éxito en disco. Decodificando metadatos visuales...")
-        
-        mensaje_estructurado = f"El usuario ha cargado el archivo '{nombre_archivo}' para su análisis inmediato."
-        resultado = core.chat(user_id, mensaje_estructurado)
-        
-        audio_url = f"/audio/{resultado['audio_file']}" if resultado.get("audio_file") else None
-        
-        return jsonify({
-            "text": resultado["text"],
-            "audio_url": audio_url
-        })
-        
-    except Exception as e:
-        enviar_log_al_hud("SYSTEM", f"Fallo en inyector multimedia: {str(e)}")
-        return jsonify({"text": f"Fallo crítico en upload: {str(e)}", "audio_url": None}), 500
-
-@app.route('/audio/<filename>')
-def servir_audio(filename):
-    """Transmite los buffers binarios de voz al reproductor del HUD."""
-    ruta_audio = os.path.join(os.getcwd(), filename)
-    if os.path.exists(ruta_audio):
-        def generar_stream():
-            with open(ruta_audio, "rb") as f:
-                data = f.read(1024)
-                while data:
-                    yield data
-                    data = f.read(1024)
-        return Response(generar_stream(), mimetype="audio/mp3")
-    else:
-        return "Audio no localizado en el búfer temporal", 404
-
-@app.route('/stream-telemetry')
-def stream_telemetry():
-    """Mantiene un canal abierto para enviar señales en vivo al HUD del frontend."""
-    def event_stream():
-        while True:
-            payload = log_queue.get()
-            yield f"data: {json.dumps(payload)}\n\n"
-            
-    return Response(event_stream(), mimetype="text/event-stream")
+    return Response(generar_flujo(), mimetype="text/event-stream")
 
 if __name__ == '__main__':
-    puerto = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=puerto, debug=False)
+    # Configuración de despliegue para desarrollo local o entornos en la nube
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
