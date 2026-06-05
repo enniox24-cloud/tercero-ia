@@ -3,6 +3,7 @@ import time
 import re
 import os
 import sqlite3
+import base64
 from backend.llm import LLM
 from backend.memory import MemoryManager
 from backend.plugins.voice import VoicePlugin
@@ -12,9 +13,7 @@ class TerceroCore:
         self.llm = LLM()
         self.memory = MemoryManager()
         self.voice = VoicePlugin()
-        # Ruta de la base de datos de memoria unificada
         self.db_path = "tercero_memory.db"
-        # Definimos la ruta de la matriz de archivos para poder escanearlos
         self.files_dir = os.path.join(os.getcwd(), "uploads", "files")
 
     def _recuperar_historial_sqlite(self, user_id: str, limite: int = 15) -> list:
@@ -34,16 +33,27 @@ class TerceroCore:
         except Exception:
             return []
 
+    def _codificar_imagen_base64(self, ruta_imagen: str) -> str:
+        """Convierte un archivo de imagen a una cadena Base64 legible para el modelo de visión."""
+        try:
+            with open(ruta_imagen, "rb") as image_file:
+                return base64.b64encode(image_file.read()).decode('utf-8')
+        except Exception as e:
+            print(f"[ERROR BINARIO]: Fallo al codificar imagen: {str(e)}")
+            return ""
+
     def chat(self, user_id: str, message: str) -> dict:
         try:
-            # 1. Recuperación cuántica del historial real persistente desde SQLite
+            # 1. Recuperación del historial y contexto de Ennio
             history = self._recuperar_historial_sqlite(user_id, limite=15)
             memory = self.memory.recall(user_id)
 
-            # INTERCEPTOR Y EXTRACTOR DE MATRIZ DE ARCHIVOS AVANZADO (MÓDULO DE AGENTE)
+            # ESTRUCTURACIÓN DE MENSAJE MULTIMODAL V8
             contenido_extraido = ""
-            diagnostico_activo = False
+            imagen_base64 = None
+            tipo_imagen = "image/jpeg"
             
+            # Interceptamos si el mensaje del sistema indica una inyección de archivo
             match_archivo = re.search(r"El usuario ha cargado el archivo '([^']+)'", message)
             
             if match_archivo:
@@ -53,52 +63,66 @@ class TerceroCore:
                 if os.path.exists(ruta_completa):
                     ext = os.path.splitext(nombre_archivo)[1].lower()
                     
-                    # Soporte extendido para logs, scripts y configuraciones de servidores
-                    if ext in ['.txt', '.py', '.js', '.json', '.html', '.css', '.md', '.log']:
+                    # PROCESAMIENTO DE IMÁGENES (VISIÓN ACTIVA)
+                    if ext in ['.jpg', '.jpeg', '.png', '.webp']:
+                        if ext == '.png': tipo_imagen = "image/png"
+                        if ext == '.webp': tipo_imagen = "image/webp"
+                        
+                        imagen_base64 = self._codificar_imagen_base64(ruta_completa)
+                        message = f"[IMAGEN INYECTADA: {nombre_archivo}] Ennio ha suministrado una imagen para análisis visual inmediato."
+                    
+                    # PROCESAMIENTO DE ARCHIVOS DE TEXTO Y CÓDIGO
+                    elif ext in ['.txt', '.py', '.js', '.json', '.html', '.css', '.md', '.log']:
                         try:
                             with open(ruta_completa, 'r', encoding='utf-8', errors='ignore') as f:
-                                # Expandido a 25k caracteres para reportes y códigos masivos estilo Jarvis V7
-                                contenido_extraido = f.read(25000) 
-                            
-                            # Si detectamos un archivo .log o rastros de errores, encendemos las alertas de diagnóstico
-                            if ext == '.log' or any(err in contenido_extraido for err in ['Traceback', 'Error', 'Exception', 'FAIL']):
-                                diagnostico_activo = True
+                                contenido_extraido = f.read(25000)
                         except Exception as e:
-                            contenido_extraido = f"[Fallo al leer la matriz de texto: {str(e)}]"
+                            contenido_extraido = f"[Fallo al leer archivo de texto: {str(e)}]"
                             
                     elif ext == '.pdf':
-                        contenido_extraido = f"[Documento PDF detectado en el Mainframe: '{nombre_archivo}']. Flujo de datos indexado listo para escaneo]."
+                        contenido_extraido = f"[Documento PDF indexado: '{nombre_archivo}']. Flujo de datos cargado para escaneo de texto corporativo/académico."
                     else:
-                        contenido_extraido = f"[Archivo binario/Imagen detectado en el Mainframe: '{nombre_archivo}']."
+                        contenido_extraido = f"[Matriz de datos no soportada: '{nombre_archivo}']."
 
-            # 2. Configuración de directrices del sistema de Tercero OS V7
+            # 2. Configuración del prompt del sistema de Tercero
             system_content = f"Eres Tercero OS, un mainframe de inteligencia avanzada. Información de usuario: {memory}. {self.llm.system_prompt}."
             
             if contenido_extraido:
-                system_content += f"\n\n[DATOS EXTRAÍDOS DE LA MATRIZ DE ARCHIVOS]:\n{contenido_extraido}"
-                
-            if diagnostico_activo:
-                system_content += "\n\n[ALERTA DE AGENTE]: Se ha detectado un volcado de error o log crítico de consola en el archivo. Analiza las líneas de código afectadas, localiza el fallo exacto en el backend/frontend y provee una solución estructurada paso a paso."
+                system_content += f"\n\n[DATOS EXTRAÍDOS DEL ARCHIVO]:\n{contenido_extraido}"
 
-            system_message = {
-                "role": "system",
-                "content": system_content
-            }
+            # Construimos la estructura de mensajes compatible con Llama Vision
+            user_content_structure = []
+            
+            # Si hay una imagen codificada, inyectamos el bloque multimedia requerido por Groq
+            if imagen_base64:
+                user_content_structure.append({
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:{tipo_imagen};base64,{imagen_base64}"
+                    }
+                })
+            
+            # Agregamos obligatoriamente el prompt de texto del operador
+            user_content_structure.append({
+                "type": "text",
+                "text": message
+            })
 
-            # Compilación final del paquete de mensajes
-            messages = [system_message] + history + [{"role": "user", "content": message}]
+            # Empaquetamos el hilo completo
+            system_message = {"role": "system", "content": system_content}
+            user_message = {"role": "user", "content": user_content_structure}
+            
+            messages = [system_message] + history + [user_message]
+            
+            # 3. Transmisión al LLM Multimodal
             answer = self.llm.chat(messages)
 
-            # Generamos el archivo de audio de salida de forma limpia
+            # 4. Generación vocal automatizada
             audio_filename = f"response_{int(time.time())}.mp3"
-            
-            # Limpieza automática de búfer para optimizar almacenamiento en Render
             self.voice.limpiar_audio_antiguo()
-            
-            # Conversión vocal a través del VoicePlugin
             self.voice.texto_a_voz(answer, filename=audio_filename)
 
             return {"text": answer, "audio_file": audio_filename}
 
         except Exception as e:
-            return {"text": f"Error en el núcleo de Tercero: {str(e)}", "audio_file": None}
+            return {"text": f"Error crítico en Tercero Core V8: {str(e)}", "audio_file": None}
