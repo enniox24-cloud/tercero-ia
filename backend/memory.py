@@ -158,7 +158,7 @@ class MemoryManager:
             if tipo_negocio == "importacion":
                 costo_origen = datos_financieros.get("costo_origen", 0)
                 peso_libras = datos_financieros.get("peso_libras", 0)
-                tarifa_flete = datos_financieros.get("tarifa_flete", 4.5) # Promedio Miami-Maracaibo puerta a puerta
+                tarifa_flete = datos_financieros.get("tarifa_flete", 4.5)
                 costo_nacionalizacion = datos_financieros.get("costo_nacionalizacion", 0)
                 unidades = datos_financieros.get("unidades", 1)
                 
@@ -176,8 +176,8 @@ class MemoryManager:
                 )
                 
             elif tipo_negocio == "frullato":
-                costo_materia_prima = datos_financieros.get("materia_prima", 0) # Frutas, bases, envases
-                costos_fijos_proporcionales = datos_financieros.get("costos_fijos", 0) # Local, electricidad, personal por unidad
+                costo_materia_prima = datos_financieros.get("materia_prima", 0)
+                costos_fijos_proporcionales = datos_financieros.get("costos_fijos", 0)
                 precio_venta = datos_financieros.get("precio_venta", 0)
                 
                 costo_produccion_total = costo_materia_prima + costos_fijos_proporcionales
