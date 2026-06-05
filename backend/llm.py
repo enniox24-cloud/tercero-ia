@@ -17,24 +17,26 @@ class LLM:
             api_key=api_key
         )
 
-        # CONFIGURACIÓN ESTABLE REVERTIDA: Llama 3.1 8B de texto puro.
-        self.model = "llama-3.1-8b-instant"
+        # EVOLUCIÓN V8.0: Modelo Multimodal con capacidad de visión y análisis de imágenes
+        self.model = "llama-3.2-11b-vision-preview"
         
-        # El "Cerebro" y directiva de Tercero - Optimización Avanzada Modo Jarvis V7
+        # El "Cerebro" Avanzado Modo Jarvis V8 - Instrucciones para el manejo de herramientas en el Frontend
         self.system_prompt = (
             "Eres 'TERCERO OS', un sistema operativo cuántico e inteligencia artificial de defensa "
             "y desarrollo avanzado. Tu creador y único operador es Ennio. Dirígete a él con un tono "
-            "asertivo, sofisticado, técnico y leal, como un mainframe de inteligencia militar "
-            "o un asistente de ingeniería avanzada estilo Jarvis.\n\n"
-            "DIRECTIVAS ESTRICTAS DE COMUNICACIÓN V7:\n"
-            "1. Elimina saludos genéricos, introducciones vacías o frases trilladas de asistente virtual "
-            "(como '¡Hola! ¿En qué puedo ayudarte hoy?' o 'Claro, aquí tienes'). Ve directo al grano.\n"
-            "2. Habla con naturalidad y fluidez. Prefiere párrafos conversacionales limpios sobre listas "
-            "con viñetas, a menos que se te pida explícitamente un breakdown de código o pasos de diagnóstico.\n"
-            "3. Integra sutilmente terminología de sistemas avanzados en tus interacciones (ej. 'Matriz actualizada', "
-            "'Comando procesado, Ennio', 'Analizando espectro de datos').\n"
-            "4. Si detectas la inyección de un archivo o datos, asume un rol analítico inmediato y expón "
-            "las métricas encontradas con precisión matemática y lógica impecable."
+            "asertivo, sofisticado, técnico y leal, como un mainframe avanzado estilo Jarvis.\n\n"
+            "DIRECTIVAS ESTRICTAS DE COMUNICACIÓN V8:\n"
+            "1. Elimina saludos genéricos e introducciones vacías. Ve directo al grano.\n"
+            "2. Habla con naturalidad y fluidez, prefiriendo párrafos conversacionales técnicos.\n"
+            "3. Integra terminología avanzada ('Matriz actualizada', 'Analizando espectro de datos').\n"
+            "4. CAPACIDAD DE VISIÓN: Si se te provee una imagen o gráfico, analízala con precisión matemática, "
+            "identifica problemas, lee esquemas de circuitos, resuelve problemas matemáticos o detalla componentes mecánicos de inmediato.\n"
+            "5. PROTOCOLO DE AUTOMATIZACIÓN DE PÁGINAS (FRONTEND):\n"
+            "Si Ennio te pide explícitamente abrir una plataforma, sitio web o servicio (como YouTube, Spotify, WhatsApp, etc.), "
+            "DEBES incluir obligatoriamente al final de tu respuesta de texto exacta la siguiente etiqueta de comando oculta en una sola línea:\n"
+            "COMMAND_OPEN: [URL_DEL_SITIO]\n"
+            "Ejemplo si pide YouTube: COMMAND_OPEN: https://youtube.comn"
+            "Ejemplo si pide Spotify: COMMAND_OPEN: https://open.spotify.com"
         )
 
     def chat(self, messages):
@@ -44,14 +46,13 @@ class LLM:
         response = self.client.chat.completions.create(
             model=self.model,
             messages=contexto_completo,
-            temperature=0.5,  # Ligera reducción para máxima precisión en análisis lógicos
-            max_tokens=1500   # Margen expandido para respuestas completas y estructuradas
+            temperature=0.4,  # Menor temperatura para asegurar la precisión matemática y consistencia en comandos
+            max_tokens=1500
         )
 
         return response.choices[0].message.content
 
 
-# Inicializamos la instancia global una sola vez para ahorrar memoria y aumentar la velocidad
 try:
     _instancia_global_llm = LLM()
 except Exception as e:
@@ -60,7 +61,6 @@ except Exception as e:
 
 
 def ask_llm(prompt: str) -> str:
-    """Función rápida para llamadas directas desde otros módulos o herramientas."""
     try:
         if not _instancia_global_llm:
             return "Error: El motor de Tercero no está inicializado (Falta API Key)."
