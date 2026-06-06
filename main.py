@@ -5,6 +5,7 @@ import random
 from flask import Flask, Response, jsonify, request
 from flask_cors import CORS
 from groq import Groq
+from a2wsgi import WSGIMiddleware  # <-- CAMBIO 1: Importamos el puente para Uvicorn
 
 # Inicialización de la App con soporte CORS completo
 app = Flask(__name__)
@@ -21,7 +22,7 @@ def health_check():
     """Ruta para que Render verifique que el backend está vivo."""
     return jsonify({
         "status": "online",
-        "engine": "Flask + Gunicorn (Nativo)",
+        "engine": "Flask + Uvicorn (Bridge)",
         "groq_loaded": groq_client is not None
     }), 200
 
@@ -94,8 +95,14 @@ def stream_telemetria():
     return response
 
 
+# --- CONVERSIÓN ASGI PARA UVICORN ---
+# CAMBIO 2: Esto transforma tu app de Flask al formato que Render y Uvicorn esperan,
+# justo después de haber registrado todas tus rutas de arriba.
+app = WSGIMiddleware(app)
+
+
 # --- ARRANQUE LOCAL ---
 if __name__ == '__main__':
-    # Esto solo se ejecuta localmente (en tu VS Code). Render ignorará este bloque.
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    # Esto te permite seguir ejecutando en local usando Uvicorn de forma nativa
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=10000, reload=True)
