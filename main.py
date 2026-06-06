@@ -11,8 +11,15 @@ from a2wsgi import WSGIMiddleware  # Puente obligatorio para solucionar el error
 from backend.core import TerceroCore
 from backend.plugins.environment import EnvironmentPlugin
 
-# Creamos la instancia interna de Flask apuntando a las carpetas del HUD
-flask_app = Flask(__name__, template_folder="frontend/templates", static_folder="frontend/static")
+# =====================================================================
+# CONFIGURACIÓN DE RUTAS ABSOLUTAS (SOLUCIÓN AL TEMPLATE NOT FOUND)
+# =====================================================================
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+TEMPLATE_DIR = os.path.join(BASE_DIR, "frontend", "templates")
+STATIC_DIR = os.path.join(BASE_DIR, "frontend", "static")
+
+# Creamos la instancia interna de Flask apuntando con precisión de ruta absoluta
+flask_app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
 
 # Inicialización segura de componentes del sistema
 core = TerceroCore()
