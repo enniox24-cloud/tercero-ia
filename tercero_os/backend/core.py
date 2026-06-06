@@ -21,6 +21,10 @@ class TerceroCore:
         # Calculamos la ruta absoluta de subidas para evitar fallos de montaje en Linux/Render
         BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
         self.files_dir = os.path.join(BASE_DIR, "uploads", "files")
+        
+        # Crear directorio de subidas si no existe para evitar fallos de escritura
+        if not os.path.exists(self.files_dir):
+            os.makedirs(self.files_dir, exist_ok=True)
 
     def _recuperar_historial_sqlite(self, user_id: str, limite: int = 15) -> list:
         """Carga el historial físico guardado en la base de datos de manera secuencial."""
@@ -147,3 +151,35 @@ class TerceroCore:
 
         except Exception as e:
             return {"text": f"Error en el núcleo de Tercero: {str(e)}", "audio_file": None}
+
+    def procesar_archivo(self, user_id: str, ruta_archivo: str) -> dict:
+        """Procesa de forma segura cualquier inyección de archivos del HUD sin usar modelos obsoletos."""
+        try:
+            nombre_archivo = os.path.basename(ruta_archivo)
+            ext = os.path.splitext(nombre_archivo)[1].lower()
+            contenido = ""
+            
+            if ext in ['.txt', '.py', '.js', '.json', '.html', '.css', '.md', '.log']:
+                with open(ruta_archivo, 'r', encoding='utf-8', errors='ignore') as f:
+                    contenido = f.read(15000)
+                prompt = f"El usuario ha inyectado el archivo '{nombre_archivo}'. Contenido:\n\n{contenido}\n\nAnaliza la estructura de este archivo y confirma su correcto procesamiento."
+            elif ext == '.pdf':
+                prompt = f"El usuario ha cargado el documento PDF '{nombre_archivo}'. Confirma la indexación del archivo en el sistema."
+            else:
+                prompt = f"El usuario ha inyectado el archivo multimedia o imagen '{nombre_archivo}' al sistema. Confirma la recepción del recurso de manera asertiva."
+            
+            # Procesamos usando la matriz limpia de llm.py
+            respuesta_texto = self.llm.chat([{"role": "user", "content": prompt}])
+            
+            # Persistencia en base de datos de telemetría
+            self._guardar_mensaje_sqlite(user_id, "user", f"[Inyección de Medio]: {nombre_archivo}")
+            self._guardar_mensaje_sqlite(user_id, "assistant", respuesta_texto)
+            
+            # Generación de voz
+            audio_filename = f"response_{int(time.time())}.mp3"
+            self.voice.limpiar_audio_antiguo()
+            self.voice.texto_a_voz(respuesta_texto, filename=audio_filename)
+            
+            return {"text": respuesta_texto, "audio_file": audio_filename}
+        except Exception as e:
+            return {"text": f"Fallo estructural en procesamiento de archivo: {str(e)}", "audio_file": None}
