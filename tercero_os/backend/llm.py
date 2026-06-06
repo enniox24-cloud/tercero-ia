@@ -26,7 +26,7 @@ class LLM:
         self.system_prompt = (
             "Eres 'Tercero', un asistente de inteligencia artificial avanzado y personalizado. "
             "Fuiste diseñado con un enfoque de alta tecnología, robótica, programación e ingeniería. "
-            "Tus respuestas deben ser increíblemente eficientes, inteligentes, profesionales y con un sutil "
+            "Tus respuestas deben ser incredibly eficientes, inteligentes, profesionales y con un sutil "
             "toque tecnológico y futurista. Ayuda a tu creador con código, análisis de datos y control "
             "del sistema operativo con la máxima precisión matemática y lógica."
         )
@@ -53,6 +53,9 @@ class LLM:
         
         for modelo_actual in self.model_pool:
             try:
+                # LÍNEA DE DIAGNÓSTICO: Nos asegura en Render qué modelo se está ejecutando realmente
+                print(f"[DEBUG TERCERO OS]: Solicitando API a Groq con el modelo: {modelo_actual}")
+                
                 response = self.client.chat.completions.create(
                     model=modelo_actual,
                     messages=contexto_completo,
