@@ -8,22 +8,24 @@ load_dotenv()
 class LLM:
 
     def __init__(self):
-        # Intentamos obtener la API key desde las variables de entorno de Render o .env
         self.api_key = os.getenv("GROQ_API_KEY")
-
         if not self.api_key:
-            # En lugar de levantar una excepción fatal que tire el servidor, 
-            # guardamos el estado para inicialización tardía (Lazy Loading) en Render.
-            print("[ADVERTENCIA TÉCNICA]: No se encontró GROQ_API_KEY en las variables de entorno.")
+            print("[ADVERTENCIA TÉCNICA]: GROQ_API_KEY no detectada en el entorno.")
 
         self.client = None
         self._inicializar_cliente()
 
         # =====================================================================
-        # MODELOS OFICIALES Y ACTIVOS DE GROQ (EVITA EL ERROR 404)
+        # POOL DE MODELOS REFORZADO (SISTEMA DE REDUNDANCIA TOTAL)
         # =====================================================================
-        self.model = "llama-3.1-8b-instant"       # Modelo principal ultra-rápido
-        self.fallback_model = "llama3-8b-8192"   # Modelo de respaldo por si el principal se satura
+        # Si uno falla, el sistema rota automáticamente al siguiente de la lista
+        self.model_pool = [
+            "llama-3.3-70b-versatile",  # El mejor: Máxima lógica, ideal para programación y mecatrónica
+            "llama-3.1-70b-versatile",  # Respaldo de alta capacidad
+            "llama-3.1-8b-instant",     # Ultra-veloz para respuestas inmediatas
+            "llama3-70b-8192",          # Clásico de alta fidelidad 
+            "llama3-8b-8192"            # El tanque ligero (nunca falla)
+        ]
         
         # El "Cerebro" y directiva de Tercero
         self.system_prompt = (
@@ -35,7 +37,6 @@ class LLM:
         )
 
     def _inicializar_cliente(self):
-        """Inicializa de forma segura el cliente de OpenAI/Groq si no se ha hecho."""
         if not self.client and self.api_key:
             self.client = OpenAI(
                 base_url="https://api.groq.com/openai/v1",
@@ -43,58 +44,46 @@ class LLM:
             )
 
     def chat(self, messages):
-        # Intentar re-inicializar si la llave se cargó después del arranque
         if not self.api_key:
             self.api_key = os.getenv("GROQ_API_KEY")
         self._inicializar_cliente()
 
         if not self.client:
-            return "Error: Canal de comunicación de Tercero no configurado (Falta GROQ_API_KEY)."
+            return "Error: Canal cognitivo no configurado (Falta GROQ_API_KEY en Render)."
 
-        # Inyectamos el system prompt al inicio del hilo de conversación para fijar su identidad
         contexto_completo = [{"role": "system", "content": self.system_prompt}] + messages
         
-        try:
-            # Intento con el modelo principal estructurado
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=contexto_completo,
-                temperature=0.7
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            print(f"[REPARACIÓN BACKEND]: Anomalía con el modelo principal: {str(e)}. Activando contingencia...")
+        # Bucle de resiliencia: recorre los modelos hasta que uno responda con éxito
+        for modelo_actual in self.model_pool:
             try:
-                # Intento de contingencia inmediata con el modelo de respaldo estable
                 response = self.client.chat.completions.create(
-                    model=self.fallback_model,
+                    model=modelo_actual,
                     messages=contexto_completo,
-                    temperature=0.7
+                    temperature=0.5
                 )
+                # Si funciona, rompemos el ciclo y entregamos la respuesta
                 return response.choices[0].message.content
-            except Exception as e_critico:
-                return f"Fallo crítico en matriz cognitiva de Tercero OS. Detalle: {str(e_critico)}"
+            except Exception as e:
+                print(f"[REDUNDANCIA]: Modelo {modelo_actual} no disponible o denegado. Buscando respaldo... Detalle: {str(e)}")
+                continue
+        
+        return "FALLO CRÍTICO GLOBAL: Ningún modelo de la infraestructura de Groq respondió. Revisa la validez de tu API Key."
 
 
-# Inicializamos la instancia global una sola vez para ahorrar memoria y aumentar la velocidad
-# Usamos un bloque de contingencia pasiva para que main.py pueda arrancar siempre sin bloquearse.
+# Inicialización de la instancia global segura
 try:
     _instancia_global_llm = LLM()
 except Exception as e:
-    print(f"[ADVERTENCIA TÉCNICA]: No se pudo inicializar el modelo Groq: {e}")
+    print(f"[ADVERTENCIA]: Error en arranque de llm.py: {e}")
     _instancia_global_llm = None
 
 
 def ask_llm(prompt: str) -> str:
-    """Función rápida para llamadas directas desde otros módulos o herramientas."""
+    """Función rápida de inyección directa desde el núcleo."""
     try:
         global _instancia_global_llm
-        # Si por alguna anomalía de memoria la instancia falló en el arranque, intentamos recrearla en caliente
         if not _instancia_global_llm:
             _instancia_global_llm = LLM()
-            
-        if not _instancia_global_llm or not os.getenv("GROQ_API_KEY"):
-            return "Error: El motor de Tercero no está inicializado (Falta API Key)."
             
         formato_mensajes = [{"role": "user", "content": prompt}]
         return _instancia_global_llm.chat(formato_mensajes)
