@@ -1,144 +1,154 @@
 import os
-import shutil
-import uvicorn
-import sqlite3
+import time
+import threading
 import json
-from fastapi import FastAPI, UploadFile, File, Form
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
+import queue
+
+from flask import Flask, render_template, request, jsonify, Response
+from a2wsgi import WSGIMiddleware  # Puente obligatorio para solucionar el error de Uvicorn
+
+# IMPORTACIÓN DE LOS COMPONENTES PRINCIPALES DE TERCERO OS
 from backend.core import TerceroCore
+from backend.plugins.environment import EnvironmentPlugin
 
-app = FastAPI()
+# =====================================================================
+# CONFIGURACIÓN DE RUTAS ABSOLUTAS (SOLUCIÓN AL TEMPLATE NOT FOUND)
+# =====================================================================
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+TEMPLATE_DIR = os.path.join(BASE_DIR, "frontend", "templates")
+STATIC_DIR = os.path.join(BASE_DIR, "frontend", "static")
+
+# Creamos la instancia interna de Flask apuntando con precisión de ruta absoluta
+flask_app = Flask(__name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR)
+
+# Inicialización segura de componentes del sistema
 core = TerceroCore()
+env_monitor = EnvironmentPlugin()
+clientes_sse = []
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"]
-)
+def enviar_log_al_hud(origen: str, mensaje: str):
+    """Envía señales en tiempo real al HUD a través de Server-Sent Events (SSE)."""
+    try:
+        payload = f"data: {json.dumps({'origen': origen, 'mensaje': mensaje}, ensure_ascii=False)}\n\n"
+        for cliente in list(clientes_sse):
+            try:
+                cliente.put_nowait(payload)
+            except Exception:
+                if cliente in clientes_sse:
+                    clientes_sse.remove(cliente)
+    except Exception as e:
+        print(f"[ERROR SSE]: {str(e)}")
 
-# Configuración estricta de directorios
-UPLOAD_DIR = "uploads"
-FILES_DIR = os.path.join(UPLOAD_DIR, "files")
-RESPONSES_DIR = os.path.join(UPLOAD_DIR, "responses")
-DB_PATH = "tercero_memory.db"
+# Vinculación del canal de logs externos al núcleo
+core.enviar_log_external = enviar_log_al_hud
 
-os.makedirs(FILES_DIR, exist_ok=True)
-os.makedirs(RESPONSES_DIR, exist_ok=True)
+def daemon_tareas_segundo_plano():
+    """Hilo perpetuo de fondo. Monitorea el tiempo y el entorno de Maracaibo."""
+    print("[SISTEMA]: Demonio de fondo activo en canal asíncrono.")
+    time.sleep(10)
+    ciclo = 0
+    
+    while True:
+        try:
+            hora_actual = time.strftime("%H:%M")
+            if hora_actual == "08:00":
+                enviar_log_al_hud("SYSTEM", "Secuencia de inicio matutina activa. Buenos días, operador.")
+                time.sleep(60)
+                
+            if ciclo % 30 == 0:
+                telemetria_clima = env_monitor.obtener_telemetria_maracaibo()
+                
+                if telemetria_clima and telemetria_clima.get("estado_critico") != "ESTABLE":
+                    enviar_log_al_hud(
+                        "ENVIRONMENT", 
+                        f"ALERTA ATMOSFÉRICA [{telemetria_clima.get('temperatura')}]: {telemetria_clima.get('reporte_diagnostico')}"
+                    )
+                elif telemetria_clima:
+                    enviar_log_al_hud("ENVIRONMENT", f"Monitoreo nominal. Maracaibo: {telemetria_clima.get('temperatura')}.")
+            
+            ciclo = (ciclo + 1) if ciclo < 3000 else 0
+            time.sleep(10)
+            
+        except Exception as e:
+            print(f"[ANOMALÍA DEMONIO]: {str(e)}")
+            time.sleep(15)
 
-# ========================================================
-# MOTOR DE MEMORIA CUÁNTICA PERSISTENTE (SQLite)
-# ========================================================
-def inicializar_base_datos():
-    """Crea la tabla de memoria si no existe en el mainframe."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS historial_chat (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id TEXT,
-            role TEXT,
-            content TEXT,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    conn.commit()
-    conn.close()
+# Activación segura del hilo secundario de monitoreo
+hilo_demonio = threading.Thread(target=daemon_tareas_segundo_plano, daemon=True)
+hilo_demonio.start()
 
-def guardar_en_memoria(user_id: str, role: str, content: str):
-    """Registra una transmisión en la base de datos."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO historial_chat (user_id, role, content) VALUES (?, ?, ?)",
-        (user_id, role, content)
-    )
-    conn.commit()
-    conn.close()
+# =====================================================================
+# ENTORNO DE RUTAS DE LA API (WSGI INTERNO)
+# =====================================================================
 
-def obtener_historial_memoria(user_id: str, limite: int = 10):
-    """Recupera los últimos paquetes de datos del usuario para el contexto."""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT role, content FROM historial_chat WHERE user_id = ? ORDER BY id DESC LIMIT ?",
-        (user_id, limite)
-    )
-    filas = cursor.fetchall()
-    conn.close()
-    
-    # Invertimos el orden para que vaya de la más antigua a la más reciente
-    mensajes = [{"role": f[0], "content": f[1]} for f in reversed(filas)]
-    return mensajes
+@flask_app.route('/')
+def index():
+    """Carga de la interfaz holográfica principal del HUD."""
+    return render_template('index.html')
 
-# Inicializamos la memoria al arrancar el servidor
-inicializar_base_datos()
-# ========================================================
-
-# Montar la carpeta raíz de almacenamiento estático
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
-
-@app.get("/")
-async def root():
-    return FileResponse("index.html")
-
-# Endpoint para chat estándar con inyección de memoria persistente
-@app.post("/chat")
-async def chat(data: dict):
-    if not core: 
-        return {"text": "Sistema offline.", "audio_url": None}
-    
-    user_id = data.get("user_id", "ennio")
-    mensaje_usuario = data.get("message", "")
-    
-    if not mensaje_usuario:
-        return {"text": "Paquete de datos vacío.", "audio_url": None}
-
-    # 1. Guardamos lo que Ennio acaba de decir en la base de datos
-    guardar_en_memoria(user_id, "user", mensaje_usuario)
-    
-    # 2. Recuperamos el contexto histórico acumulado para TerceroCore
-    # Nota: Si tu TerceroCore aún no procesa arreglos de historial, esto sirve de base para la Fase 3
-    historial_contexto = obtener_historial_memoria(user_id, limite=10)
-    
-    # 3. Transmisión al procesador cognitivo central
-    res = core.chat(user_id, mensaje_usuario)
-    respuesta_texto = res.get("text", "")
-    
-    # 4. Guardamos la respuesta de Tercero en la base de datos para el futuro
-    if respuesta_texto:
-        guardar_en_memoria(user_id, "assistant", respuesta_texto)
-    
-    audio_file = res.get("audio_file")
-    audio_url = f"/uploads/responses/{audio_file}" if audio_file else None
-    
-    return {"text": respuesta_texto, "audio_url": audio_url}
-
-# Endpoint para subida de archivos con registro en memoria
-@app.post("/upload")
-async def upload_file(user_id: str = Form(...), file: UploadFile = File(...)):
-    file_path = os.path.join(FILES_DIR, file.filename)
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    
-    prompt_archivo = f"[SISTEMA]: El usuario ha cargado el archivo '{file.filename}'. Analízalo y confirma su recepción."
-    
-    # Registramos la acción del archivo en la base de datos
-    guardar_en_memoria(user_id, "user", f"[Archivo Inyectado: {file.filename}]")
-    
-    res = core.chat(user_id, prompt_archivo)
-    respuesta_texto = res.get("text", "")
-    
-    if respuesta_texto:
-        guardar_en_memoria(user_id, "assistant", respuesta_texto)
+@flask_app.route('/api/chat', methods=['POST'])
+def api_chat():
+    """Endpoint principal de comunicación con el Mainframe."""
+    try:
+        data = request.json or {}
+        user_message = data.get("message", "")
+        user_id = data.get("user_id", "ennio")
         
-    audio_file = res.get("audio_file")
-    audio_url = f"/uploads/responses/{audio_file}" if audio_file else None
-    
-    return {"status": "success", "filename": file.filename, "text": respuesta_texto, "audio_url": audio_url}
+        if not user_message:
+            return jsonify({"error": "Matriz de mensaje vacía"}), 400
+            
+        respuesta_mainframe = core.chat(user_id, user_message)
+        return jsonify(respuesta_mainframe)
+    except Exception as e:
+        return jsonify({"error": f"Fallo en comunicación: {str(e)}"}), 500
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port)
+@flask_app.route('/upload', methods=['POST'])
+def upload_file():
+    """Endpoint para inyección y procesamiento multimedia."""
+    try:
+        user_id = request.form.get("user_id", "ennio")
+        if 'file' not in request.files:
+            return jsonify({"error": "No se detectó ningún medio en la carga"}), 400
+            
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "Nombre de archivo inválido"}), 400
+
+        # Guardado y procesamiento seguro a través de core.py
+        ruta_guardado = os.path.join(core.files_dir, file.filename)
+        file.save(ruta_guardado)
+        
+        respuesta_mainframe = core.procesar_archivo(user_id, ruta_guardado)
+        return jsonify(respuesta_mainframe)
+    except Exception as e:
+        return jsonify({"error": f"Fallo en inyección multimedia: {str(e)}"}), 500
+
+@flask_app.route('/stream_telemetria')
+def stream_telemetria():
+    """Canal continuo SSE para logs en tiempo real sincronizados con index.html."""
+    def generar_flujo():
+        q = queue.Queue()
+        clientes_sse.append(q)
+        try:
+            yield f"data: {json.dumps({'origen': 'SYSTEM', 'mensaje': 'Enlace cuántico SSE establecido con el HUD.'}, ensure_ascii=False)}\n\n"
+            while True:
+                msg = q.get()
+                yield msg
+        except GeneratorExit:
+            if q in clientes_sse:
+                clientes_sse.remove(q)
+            
+    return Response(generar_flujo(), mimetype="text/event-stream")
+
+# =====================================================================
+# INTERFLEX DE MONTAJE PARA EL ENTORNO SERVIDOR DE RENDER (ASGI WRAPPER)
+# =====================================================================
+# Convertimos el entorno WSGI de Flask en un ejecutable ASGI llamado 'app'.
+# Esto evita por completo el error de 'start_response' con Uvicorn en producción.
+app = WSGIMiddleware(flask_app)
+
+if __name__ == '__main__':
+    # Ejecución local de respaldo o fallback directo
+    import uvicorn
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
