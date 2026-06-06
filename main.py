@@ -20,7 +20,7 @@ env_monitor = EnvironmentPlugin()
 clientes_sse = []
 
 # =====================================================================
-# INTERFAZ HOLOGRÁFICA EN MEMORIA (HTML INCUSTADO CONTRA TEMPLATE NOT FOUND)
+# INTERFAZ HOLOGRÁFICA EN MEMORIA (HTML INCRUSTADO CONTRA TEMPLATE NOT FOUND)
 # =====================================================================
 HTML_HUD = """<!DOCTYPE html>
 <html lang="es">
@@ -234,7 +234,6 @@ HTML_HUD = """<!DOCTYPE html>
             else { entry.classList.add('critical-log'); entry.innerHTML = `[SISTEMA]: ${texto}`; }
             consoleContainer.appendChild(entry);
             consoleContainer.scrollTop = consoleContainer.scrollHeight;
-            consoleContainer.stopPropagation;
         }
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
