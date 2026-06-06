@@ -5,21 +5,22 @@ import json
 import queue
 
 from flask import Flask, render_template, request, jsonify, Response
-from a2wsgi import WSGIMiddleware  # El puente oficial y correcto para Uvicorn
+from a2wsgi import WSGIMiddleware  # Puente obligatorio para solucionar el error de Uvicorn
 
-# IMPORTACIÓN DE LOS COMPONENTES PRINCIPALES DEL BACKEND
+# IMPORTACIÓN DE LOS COMPONENTES PRINCIPALES DE TERCERO OS
 from backend.core import TerceroCore
 from backend.plugins.environment import EnvironmentPlugin
 
+# Creamos la instancia interna de Flask apuntando a las carpetas del HUD
 flask_app = Flask(__name__, template_folder="frontend/templates", static_folder="frontend/static")
 
-# Inicialización segura de componentes
+# Inicialización segura de componentes del sistema
 core = TerceroCore()
 env_monitor = EnvironmentPlugin()
 clientes_sse = []
 
 def enviar_log_al_hud(origen: str, mensaje: str):
-    """Envía señales en tiempo real al HUD de forma segura."""
+    """Envía señales en tiempo real al HUD a través de Server-Sent Events (SSE)."""
     try:
         payload = f"data: {json.dumps({'origen': origen, 'mensaje': mensaje}, ensure_ascii=False)}\n\n"
         for cliente in list(clientes_sse):
@@ -31,7 +32,7 @@ def enviar_log_al_hud(origen: str, mensaje: str):
     except Exception as e:
         print(f"[ERROR SSE]: {str(e)}")
 
-# Vinculación del canal de logs externos
+# Vinculación del canal de logs externos al núcleo
 core.enviar_log_external = enviar_log_al_hud
 
 def daemon_tareas_segundo_plano():
@@ -65,18 +66,22 @@ def daemon_tareas_segundo_plano():
             print(f"[ANOMALÍA DEMONIO]: {str(e)}")
             time.sleep(15)
 
-# Activación del hilo de fondo
+# Activación segura del hilo secundario de monitoreo
 hilo_demonio = threading.Thread(target=daemon_tareas_segundo_plano, daemon=True)
 hilo_demonio.start()
 
-# RUTA PRINCIPAL - INDEX
+# =====================================================================
+# ENTORNO DE RUTAS DE LA API (WSGI INTERNO)
+# =====================================================================
+
 @flask_app.route('/')
 def index():
+    """Carga de la interfaz holográfica principal del HUD."""
     return render_template('index.html')
 
-# RUTA DE LA API DE CHAT
 @flask_app.route('/api/chat', methods=['POST'])
 def api_chat():
+    """Endpoint principal de comunicación con el Mainframe."""
     try:
         data = request.json or {}
         user_message = data.get("message", "")
@@ -90,9 +95,30 @@ def api_chat():
     except Exception as e:
         return jsonify({"error": f"Fallo en comunicación: {str(e)}"}), 500
 
-# RUTA DE TELEMETRÍA EN TIEMPO REAL (SSE)
+@flask_app.route('/upload', methods=['POST'])
+def upload_file():
+    """Endpoint para inyección y procesamiento multimedia."""
+    try:
+        user_id = request.form.get("user_id", "ennio")
+        if 'file' not in request.files:
+            return jsonify({"error": "No se detectó ningún medio en la carga"}), 400
+            
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "Nombre de archivo inválido"}), 400
+
+        # Guardado y procesamiento seguro a través de core.py
+        ruta_guardado = os.path.join(core.files_dir, file.filename)
+        file.save(ruta_guardado)
+        
+        respuesta_mainframe = core.procesar_archivo(user_id, ruta_guardado)
+        return jsonify(respuesta_mainframe)
+    except Exception as e:
+        return jsonify({"error": f"Fallo en inyección multimedia: {str(e)}"}), 500
+
 @flask_app.route('/stream_telemetria')
 def stream_telemetria():
+    """Canal continuo SSE para logs en tiempo real sincronizados con index.html."""
     def generar_flujo():
         q = queue.Queue()
         clientes_sse.append(q)
@@ -108,12 +134,14 @@ def stream_telemetria():
     return Response(generar_flujo(), mimetype="text/event-stream")
 
 # =====================================================================
-# ACOPLAMIENTO DE MONTAJE PARA EL ENTORNO DE RENDER
+# INTERFLEX DE MONTAJE PARA EL ENTORNO SERVIDOR DE RENDER (ASGI WRAPPER)
 # =====================================================================
-# Render busca el objeto ejecutable final. Convertimos el flask_app (WSGI)
-# en un objeto ejecutable ASGI compatible con Uvicorn usando la librería.
+# Convertimos el entorno WSGI de Flask en un ejecutable ASGI llamado 'app'.
+# Esto evita por completo el error de 'start_response' con Uvicorn en producción.
 app = WSGIMiddleware(flask_app)
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    flask_app.run(host='0.0.0.0', port=port, debug=False)
+    # Ejecución local de respaldo o fallback directo
+    import uvicorn
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
