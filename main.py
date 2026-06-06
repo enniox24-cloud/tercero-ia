@@ -234,6 +234,7 @@ HTML_HUD = """<!DOCTYPE html>
             else { entry.classList.add('critical-log'); entry.innerHTML = `[SISTEMA]: ${texto}`; }
             consoleContainer.appendChild(entry);
             consoleContainer.scrollTop = consoleContainer.scrollHeight;
+            consoleContainer.stopPropagation;
         }
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
