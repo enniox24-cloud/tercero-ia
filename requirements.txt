@@ -13,3 +13,6 @@ gTTS
 edge-tts
 Flask==3.0.3
 a2wsgi
+flask-cors==4.0.1
+gunicorn==22.0.0
+groq==0.9.0
