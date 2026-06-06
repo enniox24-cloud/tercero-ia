@@ -13,10 +13,13 @@ class TerceroCore:
         self.llm = LLM()
         self.memory = MemoryManager()
         self.voice = VoicePlugin()
-        # Ruta de la base de datos de memoria unificada
+        
+        # Ruta unificada de base de datos
         self.db_path = "tercero_memory.db"
-        # Definimos la ruta de la matriz de archivos para poder escanearlos
-        self.files_dir = os.path.join(os.getcwd(), "uploads", "files")
+        
+        # Determinamos la ruta absoluta para evitar fallos de ubicación en Render
+        BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+        self.files_dir = os.path.join(BASE_DIR, "uploads", "files")
 
     def _recuperar_historial_sqlite(self, user_id: str, limite: int = 15) -> list:
         """Carga de forma segura el historial físico guardado en la base de datos."""
@@ -35,13 +38,39 @@ class TerceroCore:
         except Exception:
             return []
 
+    def _guardar_mensaje_sqlite(self, user_id: str, role: str, content: str):
+        """SOLUCIÓN: Registra de forma persistente cada interacción en la base de datos."""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            # Creamos la tabla de respaldo si por alguna razón no existe
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS historial_chat (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT,
+                    role TEXT,
+                    content TEXT
+                )
+            ''')
+            cursor.execute(
+                "INSERT INTO historial_chat (user_id, role, content) VALUES (?, ?, ?)",
+                (user_id, role, content)
+            )
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            print(f"[ERROR PERSISTENCIA]: No se pudo escribir en SQLite: {str(e)}")
+
     def chat(self, user_id: str, message: str) -> dict:
         try:
-            # 1. Recuperación cuántica del historial real persistente desde SQLite
+            # 1. Recuperación del historial real persistente desde SQLite y memoria secundaria
             history = self._recuperar_historial_sqlite(user_id, limite=15)
             memory = self.memory.recall(user_id)
 
-            # INTERCEPTOR Y EXTRACTOR DE MATRIZ DE ARCHIVOS AVANZADO (MÓDULO DE AGENTE)
+            # Guardamos el mensaje entrante del usuario de inmediato
+            self._guardar_mensaje_sqlite(user_id, "user", message)
+
+            # INTERCEPTOR Y EXTRACTOR DE MATRIZ DE ARCHIVOS AVANZADO
             contenido_extraido = ""
             diagnostico_activo = False
             
@@ -58,9 +87,9 @@ class TerceroCore:
                     if ext in ['.txt', '.py', '.js', '.json', '.html', '.css', '.md', '.log']:
                         try:
                             with open(ruta_completa, 'r', encoding='utf-8', errors='ignore') as f:
-                                contenido_extraido = f.read(20000) # Expandido a 20k caracteres para reportes largos
+                                contenido_extraido = f.read(20000) # Expandido a 20k caracteres
                             
-                            # Si detectamos un archivo .log o rastros de errores, encendemos las alertas de diagnóstico
+                            # Alertas de diagnóstico si detectamos anomalías o excepciones
                             if ext == '.log' or any(err in contenido_extraido for err in ['Traceback', 'Error', 'Exception', 'FAIL']):
                                 diagnostico_activo = True
                         except Exception as e:
@@ -71,8 +100,8 @@ class TerceroCore:
                     else:
                         contenido_extraido = f"[Archivo binario/Imagen detectado en el Mainframe: '{nombre_archivo}']."
 
-            # 2. Configuración de directrices del sistema de Tercero OS
-            system_content = f"Eres Tercero OS, un mainframe de inteligencia avanzada. Información de usuario: {memory}. {self.llm.system_prompt}."
+            # 2. Configuración de directrices del sistema de Tercero OS (Limpiando duplicaciones)
+            system_content = f"Información de contexto de tu operador principal (Ennio): {memory}."
             
             if contenido_extraido:
                 system_content += f"\n\n[DATOS EXTRAÍDOS DE LA MATRIZ DE ARCHIVOS]:\n{contenido_extraido}"
@@ -89,19 +118,27 @@ class TerceroCore:
             messages = [system_message] + history + [{"role": "user", "content": message}]
             answer = self.llm.chat(messages)
 
-            # PROCESADOR DE COMANDOS (TOOLS)
+            # PROCESADOR DE COMANDOS (TOOLS) REFORZADO CON RETENCIÓN DE MEMORIA
             try:
                 match = re.search(r"\{.*\}", answer, re.DOTALL)
                 if match:
                     parsed = json.loads(match.group(0))
                     if "tool" in parsed:
                         res = run_tool(parsed["tool"], parsed.get("query", ""))
-                        answer = self.llm.chat([
-                            {"role": "system", "content": f"Resultado de herramienta: {res}. Explícalo al usuario de manera asertiva."},
-                            {"role": "user", "content": message}
-                        ])
-            except Exception:
-                pass
+                        
+                        # SOLUCIÓN: Añadimos la respuesta intermedia y el output de la herramienta al hilo existente
+                        messages.append({"role": "assistant", "content": answer})
+                        messages.append({
+                            "role": "system", 
+                            "content": f"[RESULTADO DE LA HERRAMIENTA {parsed['tool'].upper()}]: {res}. Interpreta este resultado técnico y respóndele a Ennio de forma asertiva."
+                        })
+                        # Re-evaluación con el contexto completo intacto
+                        answer = self.llm.chat(messages)
+            except Exception as e:
+                print(f"[ANOMALÍA TOOL]: Error procesando comandos: {str(e)}")
+
+            # Guardamos de forma persistente la respuesta final generada por Tercero
+            self._guardar_mensaje_sqlite(user_id, "assistant", answer)
 
             # Generamos el archivo de audio de salida de forma limpia
             audio_filename = f"response_{int(time.time())}.mp3"
