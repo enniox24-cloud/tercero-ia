@@ -16,6 +16,7 @@ class LLM:
         self._inicializar_cliente()
 
         # POOL DE MODELOS OFICIALES DE GROQ (Cero modelos de visión obsoletos)
+        # Se prioriza llama-3.3-70b-versatile por soporte JSON, lógica avanzada y estabilidad a futuro.
         self.model_pool = [
             "llama-3.3-70b-versatile",  # Principal: Máxima lógica y programación
             "llama-3.1-8b-instant",     # Respaldo 1: Ultra-veloz
@@ -46,10 +47,15 @@ class LLM:
         if not self.client:
             return "Error: Canal cognitivo no configurado (Falta GROQ_API_KEY)."
 
-        # Construcción limpia inyectando las directivas de Tercero OS
+        # Construcción limpia preservando las directivas del sistema e inyectando las de Tercero OS
         contexto_completo = [{"role": "system", "content": self.system_prompt}] + [
             m for m in messages if m.get("role") != "system"
         ]
+        
+        # Si la lista original incluía un system message de core con memoria, lo anexamos para no perderlo
+        system_nodes = [m for m in messages if m.get("role") == "system"]
+        if system_nodes:
+            contexto_completo[0]["content"] += "\n" + "\n".join([s["content"] for s in system_nodes])
         
         for modelo_actual in self.model_pool:
             try:
