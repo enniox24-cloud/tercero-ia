@@ -10,24 +10,24 @@ class LLM:
     def __init__(self):
         self.api_key = os.getenv("GROQ_API_KEY")
         if not self.api_key:
-            print("[ADVERTENCIA TÉCNICA]: GROQ_API_KEY no detectada en el entorno.")
+            print("[ADVERTENCIA TÉCNICA]: GROQ_API_KEY no detectada en el entorno de Render.")
 
         self.client = None
         self._inicializar_cliente()
 
         # =====================================================================
-        # POOL DE MODELOS REFORZADO (SISTEMA DE REDUNDANCIA TOTAL)
+        # POOL DE MODELOS INMUNE Y ACTUALIZADO (EVITA EL ERROR 404)
         # =====================================================================
-        # Si uno falla, el sistema rota automáticamente al siguiente de la lista
+        # Eliminamos por completo el modelo de visión obsoleto.
+        # Usamos los identificadores oficiales y activos de producción de Groq.
         self.model_pool = [
-            "llama-3.3-70b-versatile",  # El mejor: Máxima lógica, ideal para programación y mecatrónica
-            "llama-3.1-70b-versatile",  # Respaldo de alta capacidad
+            "llama-3.3-70b-versatile",  # El mejor: Ideal para lógica, mecatrónica y programación
             "llama-3.1-8b-instant",     # Ultra-veloz para respuestas inmediatas
-            "llama3-70b-8192",          # Clásico de alta fidelidad 
+            "llama3-70b-8192",          # Modelo de alta capacidad de respaldo
             "llama3-8b-8192"            # El tanque ligero (nunca falla)
         ]
         
-        # El "Cerebro" y directiva de Tercero
+        # El "Cerebro" y directiva base de Tercero OS
         self.system_prompt = (
             "Eres 'Tercero', un asistente de inteligencia artificial avanzado y personalizado. "
             "Fuiste diseñado con un enfoque de alta tecnología, robótica, programación e ingeniería. "
@@ -49,11 +49,15 @@ class LLM:
         self._inicializar_cliente()
 
         if not self.client:
-            return "Error: Canal cognitivo no configurado (Falta GROQ_API_KEY en Render)."
+            return "Error: Canal cognitivo no configurado (Falta GROQ_API_KEY)."
 
-        contexto_completo = [{"role": "system", "content": self.system_prompt}] + messages
+        # Construcción limpia del hilo inyectando la identidad de Tercero
+        contexto_completo = [{"role": "system", "content": self.system_prompt}] + [
+            m for m in messages if m.get("role") != "system"
+        ]
         
-        # Bucle de resiliencia: recorre los modelos hasta que uno responda con éxito
+        # BUCLE DE RESILIENCIA EN CASCADA
+        # Si un modelo de la lista da error o no existe, salta al siguiente automáticamente
         for modelo_actual in self.model_pool:
             try:
                 response = self.client.chat.completions.create(
@@ -61,25 +65,24 @@ class LLM:
                     messages=contexto_completo,
                     temperature=0.5
                 )
-                # Si funciona, rompemos el ciclo y entregamos la respuesta
                 return response.choices[0].message.content
             except Exception as e:
-                print(f"[REDUNDANCIA]: Modelo {modelo_actual} no disponible o denegado. Buscando respaldo... Detalle: {str(e)}")
+                print(f"[POOL]: Modelo {modelo_actual} no disponible. Saltando al respaldo... Detalle: {str(e)}")
                 continue
         
-        return "FALLO CRÍTICO GLOBAL: Ningún modelo de la infraestructura de Groq respondió. Revisa la validez de tu API Key."
+        return "FALLO CRÍTICO GLOBAL: Ningún modelo de la infraestructura de Groq respondió. Verifica tu API Key."
 
 
-# Inicialización de la instancia global segura
+# Inicialización segura de la instancia global para el Mainframe
 try:
     _instancia_global_llm = LLM()
 except Exception as e:
-    print(f"[ADVERTENCIA]: Error en arranque de llm.py: {e}")
+    print(f"[ERROR]: No se pudo levantar la instancia de LLM: {e}")
     _instancia_global_llm = None
 
 
 def ask_llm(prompt: str) -> str:
-    """Función rápida de inyección directa desde el núcleo."""
+    """Función rápida para llamadas directas o herramientas externas."""
     try:
         global _instancia_global_llm
         if not _instancia_global_llm:
@@ -88,4 +91,4 @@ def ask_llm(prompt: str) -> str:
         formato_mensajes = [{"role": "user", "content": prompt}]
         return _instancia_global_llm.chat(formato_mensajes)
     except Exception as e:
-        return f"Error en ejecución ask_llm: {str(e)}"
+        return f"Error en ejecución directa ask_llm: {str(e)}"
